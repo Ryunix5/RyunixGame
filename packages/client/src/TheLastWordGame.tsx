@@ -170,104 +170,123 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                             <div className="text-center text-gray-600 italic mt-10">Waiting for topic...</div>
                         )}
 
-                        {/* Answer List */}
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                            {/* Show submission status during THINKING phase */}
-                            {gameState.phase === 'THINKING' && (
-                                <div className="bg-gray-800/50 border border-cyan-500/30 rounded-lg p-4 text-center">
-                                    <p className="text-cyan-400 text-sm font-bold mb-2">
-                                        ⏳ Collecting Answers...
-                                    </p>
-                                    <p className="text-gray-400 text-xs">
-                                        {gameState.pendingAnswers?.length || 0} / {Object.values(gameState.lives).filter(l => l > 0).length} players submitted
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Show answers only during REVIEW phase */}
-                            {gameState.phase === 'REVIEW' && gameState.answers.map((a, idx) => {
-                                const player = room.players.find(p => p.id === a.playerId);
-                                return (
-                                    <div key={idx} className="group relative bg-gray-800 rounded p-3 border border-gray-700 hover:border-cyan-500/50 transition-all">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <span className="text-xs font-mono text-gray-500">{player?.name || a.playerId}</span>
-                                                <p className="text-lg font-bold text-white mt-1">{a.text}</p>
-                                            </div>
-                                            <span className="text-[10px] text-gray-600 font-mono">
-                                                {new Date(a.timestamp).toLocaleTimeString()}
-                                            </span>
-                                        </div>
-
-                                        {/* Challenge Button (Non-Creators Only) */}
-                                        {myId !== a.playerId && isAlive && (
-                                            <button
-                                                onClick={() => challengeAnswer(a.text)}
-                                                className="absolute -right-2 -top-2 bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                                Challenge
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Challenge Modal / Overlay (Host Judge) */}
-                        {gameState.challenge && gameState.challenge.active && (
-                            <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-200">
-                                <h3 className="text-2xl font-bold text-red-500 mb-2 uppercase tracking-widest animate-pulse">Challenge!</h3>
-                                <div className="bg-black/40 p-4 rounded-lg border border-red-500/30 mb-6">
-                                    <p className="text-gray-400 text-sm mb-1">
-                                        {room.players.find(p => p.id === gameState.challenge!.challengerId)?.name} challenged
-                                    </p>
-                                    <p className="text-3xl font-black text-white">"{gameState.challenge.answerText}"</p>
-                                </div>
-
-                                {isHost ? (
-                                    <div className="flex flex-col gap-2">
-                                        <p className="text-yellow-400 text-sm font-bold uppercase mb-2">Host Decision Required</p>
-                                        <div className="flex gap-4">
-                                            <button
-                                                onClick={() => judgeChallenge('valid')}
-                                                className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded font-bold transition-all text-white shadow-lg border border-green-500">
-                                                VALID (Punish Challenger)
-                                            </button>
-                                            <button
-                                                onClick={() => judgeChallenge('invalid')}
-                                                className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded font-bold transition-all text-white shadow-lg border border-red-500">
-                                                INVALID (Punish Answerer)
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-yellow-500 font-bold animate-pulse">
-                                        Waiting for Host Judgment...
-                                    </div>
-                                )}
+                        {/* Show submission status during THINKING phase */}
+                        {gameState.phase === 'THINKING' && (
+                            <div className="bg-gray-800/50 border border-cyan-500/30 rounded-lg p-4 text-center">
+                                <p className="text-cyan-400 text-sm font-bold mb-2">
+                                    ⏳ Collecting Answers...
+                                </p>
+                                <p className="text-gray-400 text-xs">
+                                    {gameState.pendingAnswers?.length || 0} / {Object.values(gameState.lives).filter(l => l > 0).length} players submitted
+                                </p>
                             </div>
                         )}
 
-                        {/* Input Area */}
-                        <div className="mt-4 flex gap-2">
-                            <input
-                                type="text"
-                                value={myAnswer}
-                                onChange={(e) => setMyAnswer(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={gameState.phase === 'THINKING' ? (isAlive ? "QUICK! TYPE A WORD!" : "Dead...") : "Wait for round..."}
-                                disabled={!isAlive || gameState.phase !== 'THINKING'}
-                                className="flex-1 bg-gray-800 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
-                            />
-                            <button
-                                onClick={submitAnswer}
-                                disabled={!isAlive || gameState.phase !== 'THINKING'}
-                                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 rounded disabled:opacity-50 transition-colors">
-                                SEND
-                            </button>
-                        </div>
+                        {/* Show answers only during REVIEW phase */}
+                        {gameState.phase === 'REVIEW' && gameState.answers.map((a, i) => (
+                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in duration-300">
+                                <div className="bg-gray-800 p-2 px-3 rounded-lg rounded-tl-none border border-gray-700 hover:border-gray-500 transition-colors group relative max-w-[80%]">
+                                    <span className="text-xs text-cyan-500 font-bold block mb-0.5">
+                                        {room.players.find(p => p.id === a.playerId)?.name || 'Unknown'}
+                                    </span>
+                                    <span className="text-white text-lg break-words">{a.text}</span>
+
+                                    {/* Challenge Button - Only in REVIEW phase */}
+                                    {!gameState.challenge && isAlive && myId !== a.playerId && (
+                                        <button
+                                            onClick={() => challengeAnswer(a.text)}
+                                            className="absolute -right-2 -top-2 bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                            Challenge
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        <div ref={messagesEndRef} />
                     </div>
+
+                    {/* Challenge Modal / Overlay (Host Judge) */}
+                    {gameState.challenge && gameState.challenge.active && (
+                        <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-200">
+                            <h3 className="text-2xl font-bold text-red-500 mb-2 uppercase tracking-widest animate-pulse">Challenge!</h3>
+                            <div className="bg-black/40 p-4 rounded-lg border border-red-500/30 mb-6">
+                                <p className="text-gray-400 text-sm mb-1">
+                                    {room.players.find(p => p.id === gameState.challenge!.challengerId)?.name} challenged
+                                </p>
+                                <p className="text-3xl font-black text-white">"{gameState.challenge.answerText}"</p>
+                            </div>
+
+                            {isHost ? (
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-yellow-400 text-sm font-bold uppercase mb-2">Host Decision Required</p>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => judgeChallenge('valid')}
+                                            className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded font-bold transition-all text-white shadow-lg border border-green-500">
+                                            VALID (Punish Challenger)
+                                        </button>
+                                        <button
+                                            onClick={() => judgeChallenge('invalid')}
+                                            className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded font-bold transition-all text-white shadow-lg border border-red-500">
+                                            INVALID (Punish Answerer)
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-yellow-500 font-bold animate-pulse">
+                                    Waiting for Host Judgment...
+                                </div>
+                            )}
+                            <p className="text-gray-400 text-sm mb-1">
+                                {room.players.find(p => p.id === gameState.challenge!.challengerId)?.name} challenged
+                            </p>
+                            <p className="text-3xl font-black text-white">"{gameState.challenge.answerText}"</p>
+                        </div>
+
+                                {isHost ? (
+                        <div className="flex flex-col gap-2">
+                            <p className="text-yellow-400 text-sm font-bold uppercase mb-2">Host Decision Required</p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => judgeChallenge('valid')}
+                                    className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded font-bold transition-all text-white shadow-lg border border-green-500">
+                                    VALID (Punish Challenger)
+                                </button>
+                                <button
+                                    onClick={() => judgeChallenge('invalid')}
+                                    className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded font-bold transition-all text-white shadow-lg border border-red-500">
+                                    INVALID (Punish Answerer)
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-yellow-500 font-bold animate-pulse">
+                            Waiting for Host Judgment...
+                        </div>
+                    )}
                 </div>
+                        )}
+
+                {/* Input Area */}
+                <div className="mt-4 flex gap-2">
+                    <input
+                        type="text"
+                        value={myAnswer}
+                        onChange={(e) => setMyAnswer(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={gameState.phase === 'THINKING' ? (isAlive ? "QUICK! TYPE A WORD!" : "Dead...") : "Wait for round..."}
+                        disabled={!isAlive || gameState.phase !== 'THINKING'}
+                        className="flex-1 bg-gray-800 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
+                    />
+                    <button
+                        onClick={submitAnswer}
+                        disabled={!isAlive || gameState.phase !== 'THINKING'}
+                        className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 rounded disabled:opacity-50 transition-colors">
+                        SEND
+                    </button>
+                </div>
+            </div>
+        </div>
             </div >
             );
 };

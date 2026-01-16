@@ -25,14 +25,17 @@ export class UnknownToOneGame implements GamePlugin {
         const initialPoints = players.length / 2;
         players.forEach(p => scores[p.id] = initialPoints);
 
+        const words = config?.words && Array.isArray(config.words) ? config.words : [];
+
         return {
             type: 'unknown-to-one', // This string literal will match the client check
             round: 1,
             phase: 'SETUP',
             scores,
             votes: {},
-            winnerIds: undefined
-        };
+            winnerIds: undefined,
+            availableWords: words
+        } as UnknownToOneState;
     }
 
     handleAction(state: UnknownToOneState, senderId: string, action: any): UnknownToOneState | null {
@@ -46,6 +49,16 @@ export class UnknownToOneGame implements GamePlugin {
                 state.secretWord = action.word;
                 this.startRound(state, Object.keys(state.scores));
                 return state;
+            }
+
+            if (action.type === 'random_word') {
+                const words = (state as any).availableWords || [];
+                if (words.length > 0) {
+                    const randomWord = words[Math.floor(Math.random() * words.length)];
+                    state.secretWord = randomWord;
+                    this.startRound(state, Object.keys(state.scores));
+                    return state;
+                }
             }
         }
 

@@ -98,8 +98,23 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                     />
                                     <button
                                         onClick={setWord}
-                                        className="w-full py-4 bg-purple-600 hover:bg-purple-500 rounded font-bold uppercase tracking-wider transition-all">
+                                        className="w-full py-4 bg-purple-600 hover:bg-purple-500 rounded font-bold uppercase tracking-wider transition-all mb-4">
                                         Start Debate
+                                    </button>
+
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="h-px bg-gray-700 flex-1" />
+                                        <span className="text-xs text-gray-500 font-bold uppercase">OR</span>
+                                        <div className="h-px bg-gray-700 flex-1" />
+                                    </div>
+
+                                    <button
+                                        onClick={() => socket?.emit(SocketEvents.GAME_ACTION, {
+                                            roomId: room.id,
+                                            action: { type: 'random_word' }
+                                        })}
+                                        className="w-full py-3 bg-cyan-900/50 hover:bg-cyan-800 border border-cyan-700 text-cyan-400 rounded font-bold uppercase tracking-wider transition-all text-sm">
+                                        🎲 Pick Random Secret
                                     </button>
                                 </div>
                             ) : (

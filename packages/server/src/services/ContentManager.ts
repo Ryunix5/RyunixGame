@@ -63,6 +63,13 @@ export class ContentManager {
             'Xylophone', 'Yacht', 'Zebra'
         ];
         this.saveContent('mind-reader', 'Standard Deck', { words: mindReaderWords });
+
+        const unknownToOneWords = [
+            'The Eiffel Tower', 'Pizza', 'Super Mario', 'The Moon', 'Toilet Paper',
+            'Bitcoin', 'Harry Potter', 'COVID-19', 'T-Rex', 'Mount Everest',
+            'Mona Lisa', 'Star Wars', 'Facebook', 'iPhone', 'Vegetarian'
+        ];
+        this.saveContent('unknown-to-one', 'Standard Secrets', { words: unknownToOneWords });
     }
 
     public getContent(gameType: string): GameContent[] {

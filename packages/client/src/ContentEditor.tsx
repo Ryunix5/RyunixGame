@@ -4,6 +4,7 @@ import { Button } from './components/ui/Button';
 const EDITABLE_GAMES = [
     { id: 'the-last-word', name: 'The Last Word' },
     { id: 'mind-reader', name: 'Mind Reader' },
+    { id: 'unknown-to-one', name: 'Unknown to One' },
     // Add others if they have data-driven content
 ];
 

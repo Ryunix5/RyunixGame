@@ -5,7 +5,9 @@ interface AudioContextType {
     toggleMusic: () => void;
     isMusicEnabled: boolean;
     musicVolume: number;
+    sfxVolume: number;
     setMusicVolume: (volume: number) => void;
+    setSFXVolume: (volume: number) => void;
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -29,14 +31,34 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return saved ? parseFloat(saved) : 0.3;
     });
 
+    const [sfxVolume, setSFXVolumeInternal] = useState(() => {
+        const saved = localStorage.getItem('sfxVolume');
+        return saved ? parseFloat(saved) : 0.5;
+    });
+
     const musicRef = useRef<HTMLAudioElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
+    const hasInteracted = useRef(false);
 
     // Initialize background music
     useEffect(() => {
         musicRef.current = new Audio('/music/menumain.mp3');
         musicRef.current.loop = true;
         musicRef.current.volume = musicVolume;
+
+        // Try to play music after first user interaction
+        const handleFirstInteraction = () => {
+            if (!hasInteracted.current && isMusicEnabled && musicRef.current) {
+                hasInteracted.current = true;
+                musicRef.current.play().catch(() => {
+                    console.log('Music playback still blocked');
+                });
+            }
+        };
+
+        // Listen for any click or keypress
+        document.addEventListener('click', handleFirstInteraction);
+        document.addEventListener('keydown', handleFirstInteraction);
 
         if (isMusicEnabled) {
             musicRef.current.play().catch(() => {
@@ -45,6 +67,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         return () => {
+            document.removeEventListener('click', handleFirstInteraction);
+            document.removeEventListener('keydown', handleFirstInteraction);
             if (musicRef.current) {
                 musicRef.current.pause();
                 musicRef.current = null;
@@ -76,6 +100,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.setItem('musicEnabled', String(newValue));
 
         if (newValue && musicRef.current) {
+            hasInteracted.current = true;
             musicRef.current.play().catch(err => {
                 console.log('Music play failed:', err.message);
             });
@@ -85,6 +110,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const setMusicVolume = (volume: number) => {
         setMusicVolumeState(volume);
         localStorage.setItem('musicVolume', String(volume));
+    };
+
+    const setSFXVolume = (volume: number) => {
+        setSFXVolumeInternal(volume);
+        localStorage.setItem('sfxVolume', String(volume));
     };
 
     // Simple SFX using Web Audio API
@@ -108,7 +138,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const config = soundConfig[sound];
         oscillator.frequency.value = config.frequency;
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.setValueAtTime(sfxVolume * 0.3, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.duration);
 
         oscillator.start(ctx.currentTime);
@@ -122,7 +152,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 toggleMusic,
                 isMusicEnabled,
                 musicVolume,
-                setMusicVolume
+                sfxVolume,
+                setMusicVolume,
+                setSFXVolume
             }}
         >
             {children}

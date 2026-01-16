@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAudio } from '../AudioContext';
 
 export const AudioControl: React.FC = () => {
-    const { isMusicEnabled, toggleMusic, musicVolume, setMusicVolume } = useAudio();
+    const { isMusicEnabled, toggleMusic, musicVolume, sfxVolume, setMusicVolume, setSFXVolume } = useAudio();
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -27,40 +27,63 @@ export const AudioControl: React.FC = () => {
                     >
                         <h3 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Audio Settings</h3>
 
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-slate-300 text-sm">Music</span>
-                                <button
-                                    onClick={toggleMusic}
-                                    className={`px-3 py-1 rounded text-xs font-bold transition-colors ${isMusicEnabled
-                                            ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                                            : 'bg-slate-700 hover:bg-slate-600 text-slate-400'
-                                        }`}
-                                >
-                                    {isMusicEnabled ? 'ON' : 'OFF'}
-                                </button>
+                        <div className="space-y-4">
+                            {/* Music Controls */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-300 text-sm">Music</span>
+                                    <button
+                                        onClick={toggleMusic}
+                                        className={`px-3 py-1 rounded text-xs font-bold transition-colors ${isMusicEnabled
+                                                ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                                                : 'bg-slate-700 hover:bg-slate-600 text-slate-400'
+                                            }`}
+                                    >
+                                        {isMusicEnabled ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+
+                                {isMusicEnabled && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-slate-400 text-xs">🔊</span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="1"
+                                            step="0.1"
+                                            value={musicVolume}
+                                            onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                                            className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                                        />
+                                        <span className="text-slate-400 text-xs w-8">{Math.round(musicVolume * 100)}%</span>
+                                    </div>
+                                )}
                             </div>
 
-                            {isMusicEnabled && (
+                            {/* SFX Controls */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-300 text-sm">Sound FX</span>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-slate-400 text-xs">🔊</span>
+                                    <span className="text-slate-400 text-xs">🔔</span>
                                     <input
                                         type="range"
                                         min="0"
                                         max="1"
                                         step="0.1"
-                                        value={musicVolume}
-                                        onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                                        className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                                        value={sfxVolume}
+                                        onChange={(e) => setSFXVolume(parseFloat(e.target.value))}
+                                        className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                     />
-                                    <span className="text-slate-400 text-xs w-8">{Math.round(musicVolume * 100)}%</span>
+                                    <span className="text-slate-400 text-xs w-8">{Math.round(sfxVolume * 100)}%</span>
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         <div className="mt-3 pt-3 border-t border-slate-700">
                             <p className="text-slate-500 text-xs">
-                                Click anywhere to start music
+                                Music starts after first click
                             </p>
                         </div>
                     </motion.div>

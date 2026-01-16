@@ -61,7 +61,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // Create audio element on first enable
             initializeMusicIfNeeded();
             if (musicRef.current) {
-                musicRef.current.play().catch(err => {
+                musicRef.current.play().catch(() => {
                     console.log('Music blocked - click toggle button to start');
                 });
             }

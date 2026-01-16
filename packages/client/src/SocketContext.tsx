@@ -73,8 +73,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
 
     const createRoom = (hostName: string) => {
+        console.log('[SocketContext] createRoom called with:', hostName);
+        console.log('[SocketContext] Socket exists:', !!socket);
+        console.log('[SocketContext] Socket connected:', socket?.connected);
         if (socket) {
+            console.log('[SocketContext] Emitting CREATE_ROOM event');
             socket.emit(SocketEvents.CREATE_ROOM, { hostName });
+        } else {
+            console.error('[SocketContext] Socket not available!');
         }
     };
 

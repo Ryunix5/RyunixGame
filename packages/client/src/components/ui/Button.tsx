@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useAudio } from '../../AudioContext';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -20,8 +21,11 @@ export const Button: React.FC<ButtonProps> = ({
     size = 'md',
     isLoading,
     disabled,
+    onClick,
     ...props
 }) => {
+    const { playSound } = useAudio();
+
     const baseStyles = "inline-flex items-center justify-center rounded-lg font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
@@ -39,10 +43,16 @@ export const Button: React.FC<ButtonProps> = ({
 
     const MotionButton = motion.button;
 
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        playSound('click');
+        onClick?.(e);
+    };
+
     return (
         <MotionButton
             className={cn(baseStyles, variants[variant], sizes[size], className)}
             disabled={disabled || isLoading}
+            onClick={handleClick}
             whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
             whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
             transition={{ duration: 0.15 }}

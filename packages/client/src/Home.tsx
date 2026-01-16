@@ -31,8 +31,14 @@ export const Home: React.FC = () => {
     };
 
     const handleCreate = () => {
-        if (!name) return;
+        console.log('[Home] handleCreate called, name:', name);
+        if (!name) {
+            console.log('[Home] No name provided');
+            return;
+        }
+        console.log('[Home] Calling createRoom with name:', name);
         createRoom(name);
+        console.log('[Home] createRoom called');
     };
 
     const handleJoin = (id?: string) => {

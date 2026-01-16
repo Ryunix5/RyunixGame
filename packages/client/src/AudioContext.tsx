@@ -1,23 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 interface AudioContextType {
-<<<<<<< HEAD
     playSound: (sound: 'click' | 'success' | 'error') => void;
     toggleMusic: () => void;
     isMusicEnabled: boolean;
     musicVolume: number;
     setMusicVolume: (volume: number) => void;
-=======
-    playSound: (sound: 'click' | 'success' | 'error' | 'timer' | 'win') => void;
-    toggleMusic: () => void;
-    toggleSFX: () => void;
-    isMusicEnabled: boolean;
-    isSFXEnabled: boolean;
-    musicVolume: number;
-    sfxVolume: number;
-    setMusicVolume: (volume: number) => void;
-    setSFXVolume: (volume: number) => void;
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -36,57 +24,24 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return saved !== 'false';
     });
 
-<<<<<<< HEAD
-=======
-    const [isSFXEnabled, setIsSFXEnabled] = useState(() => {
-        const saved = localStorage.getItem('sfxEnabled');
-        return saved !== 'false';
-    });
-
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
     const [musicVolume, setMusicVolumeState] = useState(() => {
         const saved = localStorage.getItem('musicVolume');
         return saved ? parseFloat(saved) : 0.3;
     });
 
-<<<<<<< HEAD
     const musicRef = useRef<HTMLAudioElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
 
     // Initialize background music
     useEffect(() => {
         musicRef.current = new Audio('/music/menumain.mp3');
-=======
-    const [sfxVolume, setSFXVolumeState] = useState(() => {
-        const saved = localStorage.getItem('sfxVolume');
-        return saved ? parseFloat(saved) : 0.5;
-    });
-
-    const musicRef = useRef<HTMLAudioElement | null>(null);
-    const audioContext = useRef<AudioContext | null>(null);
-
-    // Initialize background music
-    useEffect(() => {
-        musicRef.current = new Audio('/music/main%20menu%20ryunix%20game%20short%20.mp3');
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
         musicRef.current.loop = true;
         musicRef.current.volume = musicVolume;
 
         if (isMusicEnabled) {
-<<<<<<< HEAD
-            // Try to play, but handle autoplay block gracefully
-            const playPromise = musicRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Autoplay blocked - user needs to interact first
-                    console.log('Music will play after first user interaction');
-                });
-            }
-=======
-            musicRef.current.play().catch(err => {
-                console.warn('Music autoplay blocked:', err);
+            musicRef.current.play().catch(() => {
+                console.log('Music will play after first user interaction');
             });
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
         }
 
         return () => {
@@ -108,11 +63,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useEffect(() => {
         if (musicRef.current) {
             if (isMusicEnabled) {
-<<<<<<< HEAD
                 musicRef.current.play().catch(() => { });
-=======
-                musicRef.current.play().catch(err => console.warn('Music play failed:', err));
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
             } else {
                 musicRef.current.pause();
             }
@@ -123,22 +74,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const newValue = !isMusicEnabled;
         setIsMusicEnabled(newValue);
         localStorage.setItem('musicEnabled', String(newValue));
-<<<<<<< HEAD
 
-        // Try to play music when toggled on
         if (newValue && musicRef.current) {
             musicRef.current.play().catch(err => {
                 console.log('Music play failed:', err.message);
             });
         }
-=======
-    };
-
-    const toggleSFX = () => {
-        const newValue = !isSFXEnabled;
-        setIsSFXEnabled(newValue);
-        localStorage.setItem('sfxEnabled', String(newValue));
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
     };
 
     const setMusicVolume = (volume: number) => {
@@ -146,7 +87,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.setItem('musicVolume', String(volume));
     };
 
-<<<<<<< HEAD
     // Simple SFX using Web Audio API
     const playSound = (sound: 'click' | 'success' | 'error') => {
         if (!audioContextRef.current) {
@@ -154,29 +94,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         const ctx = audioContextRef.current;
-=======
-    const setSFXVolume = (volume: number) => {
-        setSFXVolumeState(volume);
-        localStorage.setItem('sfxVolume', String(volume));
-    };
-
-    // Simple SFX using Web Audio API
-    const playSound = (sound: 'click' | 'success' | 'error' | 'timer' | 'win') => {
-        if (!isSFXEnabled) return;
-
-        if (!audioContext.current) {
-            audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-
-        const ctx = audioContext.current;
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
         oscillator.connect(gainNode);
         gainNode.connect(ctx.destination);
 
-<<<<<<< HEAD
         const soundConfig = {
             click: { frequency: 800, duration: 0.05 },
             success: { frequency: 1200, duration: 0.15 },
@@ -186,22 +109,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const config = soundConfig[sound];
         oscillator.frequency.value = config.frequency;
         gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-=======
-        // Different sounds have different frequencies and durations
-        const soundConfig = {
-            click: { frequency: 800, duration: 0.05, type: 'sine' as OscillatorType },
-            success: { frequency: 1200, duration: 0.15, type: 'triangle' as OscillatorType },
-            error: { frequency: 400, duration: 0.2, type: 'sawtooth' as OscillatorType },
-            timer: { frequency: 600, duration: 0.1, type: 'square' as OscillatorType },
-            win: { frequency: 1500, duration: 0.3, type: 'sine' as OscillatorType }
-        };
-
-        const config = soundConfig[sound];
-        oscillator.type = config.type;
-        oscillator.frequency.value = config.frequency;
-
-        gainNode.gain.setValueAtTime(sfxVolume * 0.3, ctx.currentTime);
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.duration);
 
         oscillator.start(ctx.currentTime);
@@ -213,19 +120,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             value={{
                 playSound,
                 toggleMusic,
-<<<<<<< HEAD
                 isMusicEnabled,
                 musicVolume,
                 setMusicVolume
-=======
-                toggleSFX,
-                isMusicEnabled,
-                isSFXEnabled,
-                musicVolume,
-                sfxVolume,
-                setMusicVolume,
-                setSFXVolume
->>>>>>> 599595466dac275e969d92c69afa4a9400992f41
             }}
         >
             {children}

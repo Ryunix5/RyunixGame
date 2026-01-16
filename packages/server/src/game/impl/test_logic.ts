@@ -16,7 +16,7 @@ const threePlayers: Player[] = [
 async function runTest() {
     const game = new SplitStealGame();
     console.log('--- TEST 1: P1 Steal, P2 Split (P1 Wins) ---');
-    let state = game.setup(mockPlayers);
+    let state = game.setup(testPlayers);
 
     // Round 1
     // Pairing should be [p1, p2]
@@ -47,7 +47,7 @@ async function runTest() {
     console.log('Completed:', game.isComplete(state));
     console.log('Final Trust:', state.trustPoints);
 
-    const results = game.resolve(state, mockPlayers);
+    const results = game.resolve(state, testPlayers);
     console.log('Results:', results);
 
     if (results['p1'] === 100 && results['p2'] === -50) {
@@ -57,12 +57,12 @@ async function runTest() {
     }
 
     console.log('\n--- TEST 2: Tie Game (Both Split) ---');
-    state = game.setup(mockPlayers);
+    state = game.setup(testPlayers);
     for (let i = 0; i < 4; i++) {
         state = game.handleAction(state, 'p1', { type: 'decision', value: 'split' })!;
         state = game.handleAction(state, 'p2', { type: 'decision', value: 'split' })!;
     }
-    const results2 = game.resolve(state, mockPlayers);
+    const results2 = game.resolve(state, testPlayers);
     console.log('Final Trust:', state.trustPoints);
     console.log('Results:', results2);
     // Expect both 100

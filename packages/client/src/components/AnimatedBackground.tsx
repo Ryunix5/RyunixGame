@@ -22,7 +22,7 @@ export const AnimatedBackground: React.FC = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    opacity: 0.2,
+                    opacity: 0.1,
                     backgroundImage: `
                         linear-gradient(to right, rgb(34, 211, 238) 1px, transparent 1px),
                         linear-gradient(to bottom, rgb(34, 211, 238) 1px, transparent 1px)

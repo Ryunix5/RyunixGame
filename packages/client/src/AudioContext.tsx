@@ -38,6 +38,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
+    const hasAutoStarted = useRef(false);
 
     // Initialize music audio element when user enables music
     const initializeMusicIfNeeded = () => {
@@ -47,6 +48,28 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             musicRef.current.volume = musicVolume;
         }
     };
+
+    // Auto-start music on first user interaction if music is enabled
+    useEffect(() => {
+        const handleFirstInteraction = () => {
+            if (!hasAutoStarted.current && isMusicEnabled) {
+                hasAutoStarted.current = true;
+                initializeMusicIfNeeded();
+                if (musicRef.current) {
+                    musicRef.current.play().catch(() => {
+                        console.log('Music autoplay blocked');
+                    });
+                }
+            }
+        };
+
+        // Listen for any click anywhere on the page
+        document.addEventListener('click', handleFirstInteraction, { once: true });
+
+        return () => {
+            document.removeEventListener('click', handleFirstInteraction);
+        };
+    }, [isMusicEnabled]);
 
     // Update music volume when it changes
     useEffect(() => {

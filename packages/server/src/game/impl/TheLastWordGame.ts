@@ -68,7 +68,12 @@ export class TheLastWordGame implements GamePlugin {
             const answeredPlayers = new Set<string>();
 
             setTimeout(() => {
+                // Reveal pending answers when timer expires
+                state.answers = [...state.pendingAnswers];
+                state.pendingAnswers = [];
+
                 // Collect who answered
+                const answeredPlayers = new Set<string>();
                 state.answers.forEach(a => answeredPlayers.add(a.playerId));
 
                 // Deduct life from non-responders
@@ -78,6 +83,7 @@ export class TheLastWordGame implements GamePlugin {
                     }
                 });
 
+                state.phase = 'REVIEW';
                 delete state.timerEndTime;
                 if (dispatch) dispatch(state);
             }, 5000);
@@ -98,15 +104,30 @@ export class TheLastWordGame implements GamePlugin {
         if (action.type === 'submit_answer') {
             if (state.challenge?.active) return null;
             if (!action.text) return null;
+            if (state.phase !== 'THINKING') return null; // Only during active round
 
-            // PUSH (Append)
-            state.answers.push({
+            // Add to pending (hidden) answers
+            state.pendingAnswers.push({
                 playerId: senderId,
                 text: action.text,
                 timestamp: Date.now()
             });
-            // Keep last 100
-            if (state.answers.length > 100) state.answers.shift();
+
+            // Check if all alive players have submitted
+            const alivePlayers = Object.entries(state.lives)
+                .filter(([_, lives]) => lives > 0)
+                .map(([id]) => id);
+
+            const submittedPlayers = new Set(state.pendingAnswers.map(a => a.playerId));
+
+            // If all alive players submitted, reveal answers
+            if (alivePlayers.every(id => submittedPlayers.has(id))) {
+                state.answers = [...state.pendingAnswers];
+                state.pendingAnswers = [];
+                state.phase = 'REVIEW';
+                delete state.timerEndTime;
+            }
+
             return state;
         }
 

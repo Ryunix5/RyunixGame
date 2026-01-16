@@ -61,6 +61,7 @@ export class TheLastWordGame implements GamePlugin {
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
+            state.phase = 'THINKING'; // Enable input for players
 
             // Set 5-second timer - deduct life from players who don't answer
             state.timerEndTime = Date.now() + 5000;

@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { SocketProvider, useSocket } from './SocketContext';
 import { VoiceProvider } from './VoiceContext';
+import { AudioProvider } from './AudioContext';
 import { Home } from './Home';
 import { RoomView } from './RoomView';
 import { AnimatedPage } from './components/AnimatedPage';
@@ -33,7 +34,9 @@ function App() {
     return (
         <SocketProvider>
             <VoiceProvider>
-                <AppContent />
+                <AudioProvider>
+                    <AppContent />
+                </AudioProvider>
             </VoiceProvider>
         </SocketProvider>
     );

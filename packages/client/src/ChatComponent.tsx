@@ -1,12 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useSocket } from './SocketContext';
 import { SocketEvents, ChatMessage } from '@ryunix/shared';
 
-export const ChatComponent: React.FC<{ height?: string }> = ({ height = 'h-64' }) => {
+export interface ChatComponentHandle {
+    clearMessages: () => void;
+}
+
+export const ChatComponent = forwardRef<ChatComponentHandle, { height?: string }>(({ height = 'h-64' }, ref) => {
     const { socket, sendChat } = useSocket();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => ({
+        clearMessages: () => setMessages([])
+    }));
 
     useEffect(() => {
         if (!socket) return;
@@ -67,4 +75,6 @@ export const ChatComponent: React.FC<{ height?: string }> = ({ height = 'h-64' }
             </form>
         </div>
     );
-};
+});
+
+ChatComponent.displayName = 'ChatComponent';

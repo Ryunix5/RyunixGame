@@ -110,8 +110,8 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                     <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest">Topic</h2>
                     <span className="text-3xl font-black text-cyan-400">{gameState.currentTopic}</span>
 
-                    {/* Setup Phase - New Topic Input */}
-                    {isHost && gameState.phase !== 'THINKING' && (
+                    {/* Host - New Topic Input */}
+                    {isHost && (
                         <div className="flex gap-2 mt-2">
                             <input
                                 value={topicInput}
@@ -123,15 +123,6 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                         </div>
                     )}
                 </div>
-
-                {/* TIMER DISPLAY */}
-                {gameState.phase === 'THINKING' && (
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-                        <div className="text-[100px] font-black text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-pulse">
-                            Thinking...
-                        </div>
-                    </div>
-                )}
 
                 <div className="flex flex-col items-end">
                     <span className="text-sm text-gray-500 font-bold uppercase">Lives</span>
@@ -149,24 +140,24 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                 <div className="w-48 flex flex-col gap-2 overflow-y-auto pr-2 border-r border-gray-700">
                     <h3 className="text-xs text-gray-500 font-bold uppercase">Players</h3>
                     {room.players.map(p => {
-                        const submitted = gameState.pendingAnswers?.find(a => a.playerId === p.id);
                         return (
                             <div key={p.id} className={`p-2 rounded flex justify-between items-center group relative ${p.id === myId ? 'bg-gray-800 border border-gray-600' : 'bg-transparent'}`}>
                                 <div className="flex flex-col">
                                     <span className={`text-sm font-bold truncate w-24 ${gameState.lives[p.id] > 0 ? 'text-gray-300' : 'text-gray-600 line-through'}`}>{p.name}</span>
-                                    {gameState.phase === 'THINKING' && submitted && <span className="text-[10px] text-green-400 font-bold">READY</span>}
                                 </div>
                                 <span className="font-mono text-red-500 font-bold">{gameState.lives[p.id]}</span>
 
                                 {/* Host Manual Deduct Button */}
-                                {isHost && gameState.lives[p.id] > 0 && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); manualDeduct(p.id); }}
-                                        className="absolute right-8 text-red-500 hover:text-white bg-red-900/50 hover:bg-red-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Deduct Life">
-                                        -
-                                    </button>
-                                )}
+                                {
+                                    isHost && gameState.lives[p.id] > 0 && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); manualDeduct(p.id); }}
+                                            className="absolute right-8 text-red-500 hover:text-white bg-red-900/50 hover:bg-red-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Deduct Life">
+                                            -
+                                        </button>
+                                    )
+                                }
                             </div>
                         );
                     })}
@@ -262,6 +253,6 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

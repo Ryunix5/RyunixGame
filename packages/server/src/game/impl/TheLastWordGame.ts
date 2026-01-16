@@ -52,7 +52,7 @@ export class TheLastWordGame implements GamePlugin {
         } as TheLastWordState;
     }
 
-    handleAction(state: TheLastWordState, senderId: string, action: any): TheLastWordState | null {
+    handleAction(state: TheLastWordState, senderId: string, action: any, dispatch?: (s: any) => void): TheLastWordState | null {
         if (state.winner) return null;
 
         // ACTION: SET_TOPIC (Host Only - enforced by UI, assumed valid here)
@@ -61,6 +61,26 @@ export class TheLastWordGame implements GamePlugin {
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
+
+            // Set 5-second timer - deduct life from players who don't answer
+            state.timerEndTime = Date.now() + 5000;
+            const answeredPlayers = new Set<string>();
+
+            setTimeout(() => {
+                // Collect who answered
+                state.answers.forEach(a => answeredPlayers.add(a.playerId));
+
+                // Deduct life from non-responders
+                Object.keys(state.lives).forEach(pid => {
+                    if (state.lives[pid] > 0 && !answeredPlayers.has(pid)) {
+                        state.lives[pid]--;
+                    }
+                });
+
+                delete state.timerEndTime;
+                if (dispatch) dispatch(state);
+            }, 5000);
+
             return state;
         }
 
@@ -147,6 +167,19 @@ export class TheLastWordGame implements GamePlugin {
     private getRandomTopic(): string {
         // Deprecated
         return "";
+    }
+
+    private endThinkingPhase(state: TheLastWordState, dispatch?: (s: any) => void) {
+        // Move pending answers to main answers
+        state.answers = [...state.pendingAnswers];
+        state.pendingAnswers = [];
+        state.phase = 'REVIEW';
+        delete state.timerEndTime;
+
+        // Emit updated state
+        if (dispatch) {
+            dispatch(state);
+        }
     }
 
     isComplete(state: TheLastWordState): boolean {

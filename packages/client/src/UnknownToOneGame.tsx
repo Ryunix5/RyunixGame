@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSocket } from './SocketContext';
 import { SocketEvents } from '@ryunix/shared';
-import { ChatComponent } from './ChatComponent';
+import { ChatComponent, ChatComponentHandle } from './ChatComponent';
 
 interface UnknownToOneState {
     type: 'unknown-to-one';
@@ -24,6 +24,14 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
     const myId = socket?.id;
     const [wordInput, setWordInput] = useState('');
     const [guessInput, setGuessInput] = useState('');
+    const chatRef = useRef<ChatComponentHandle>(null);
+
+    // Clear chat when round resets (entering SETUP phase)
+    useEffect(() => {
+        if (gameState.phase === 'SETUP') {
+            chatRef.current?.clearMessages();
+        }
+    }, [gameState.phase]);
 
     if (!room || !myId) return null;
 

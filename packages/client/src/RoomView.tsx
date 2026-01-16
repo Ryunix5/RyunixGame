@@ -68,7 +68,17 @@ export const RoomView: React.FC = () => {
     };
 
     const startGame = () => {
-        if (!socket || !isHost) return;
+        console.log('[Client] Start Game clicked');
+        if (!socket) {
+            console.error('[Client] Socket not connected');
+            alert('Error: Not connected to server');
+            return;
+        }
+        if (!isHost) {
+            console.error('[Client] Not host');
+            return;
+        }
+        console.log(`[Client] Emitting START_GAME. Room: ${room.id}, Game: ${selectedGame}`);
         socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame });
     };
 

@@ -13,8 +13,15 @@ export class ContentManager {
     private db: Database.Database;
 
     constructor() {
-        // Ensure data directory exists or use relative path
-        const dbPath = path.join(process.cwd(), 'content.db');
+        const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+
+        // Ensure data directory exists
+        const fs = require('fs');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        const dbPath = path.join(dataDir, 'content.db');
         console.log('[ContentManager] Initializing DB at:', dbPath);
         this.db = new Database(dbPath, { verbose: console.log });
         this.initialize();

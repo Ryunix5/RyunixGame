@@ -12,7 +12,7 @@ const AppContent: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative">
             <AnimatedBackground />
-            <div className="min-h-screen flex items-center justify-center relative z-10">
+            <div className="min-h-screen flex items-center justify-center relative" style={{ zIndex: 1 }}>
                 <AnimatePresence mode="wait">
                     {!room ? (
                         <AnimatedPage key="home" variant="fade">

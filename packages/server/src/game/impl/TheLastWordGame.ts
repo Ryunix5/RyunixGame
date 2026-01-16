@@ -56,7 +56,14 @@ export class TheLastWordGame implements GamePlugin {
             return state;
         }
 
-        if (state.lives[senderId] <= 0 && action.type !== 'set_topic' && action.type !== 'deduct_life') return null;
+        // Allow Host actions even if eliminated
+        if (state.lives[senderId] <= 0 &&
+            action.type !== 'set_topic' &&
+            action.type !== 'deduct_life' &&
+            action.type !== 'judge_challenge') {
+            return null;
+        }
+
 
         // ACTION: SUBMIT_ANSWER
         if (action.type === 'submit_answer') {

@@ -97,17 +97,10 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
         }
     };
 
-    return (
     // PHASE: THINKING (Timer)
-    if (gameState.phase === 'THINKING') {
-        const timeLeft = Math.max(0, Math.ceil(((gameState.timerEndTime || 0) - Date.now()) / 1000));
-        // We need a re-render for timer. 
-        // Force re-render every sec? Or just trust state updates if server sends them?
-        // Server sends update only on start/end. Client needs internal timer or use CSS animation.
-        // Let's use internal state for visual countdown if needed, but simple text is fine.
-        // Actually, React won't re-render countdown unless state changes.
-        // Let's add a visual timer since we have endTime.
-    }
+    // We can use this variable for conditional rendering if needed, 
+    // but the main rendering handles it via gameState.phase
+    // const timeLeft = Math.max(0, Math.ceil(((gameState.timerEndTime || 0) - Date.now()) / 1000));
 
     return (
         <div className="flex flex-col items-center w-full bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px]">

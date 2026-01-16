@@ -16,6 +16,9 @@ interface TheLastWordState {
         votes: { [playerId: string]: 'valid' | 'invalid' };
     } | null;
     round: number;
+    phase: 'SETUP' | 'THINKING' | 'REVIEW';
+    pendingAnswers: Array<{ playerId: string; text: string; timestamp: number }>;
+    timerEndTime?: number;
     winner?: string;
 }
 
@@ -95,13 +98,27 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
     };
 
     return (
+    // PHASE: THINKING (Timer)
+    if (gameState.phase === 'THINKING') {
+        const timeLeft = Math.max(0, Math.ceil(((gameState.timerEndTime || 0) - Date.now()) / 1000));
+        // We need a re-render for timer. 
+        // Force re-render every sec? Or just trust state updates if server sends them?
+        // Server sends update only on start/end. Client needs internal timer or use CSS animation.
+        // Let's use internal state for visual countdown if needed, but simple text is fine.
+        // Actually, React won't re-render countdown unless state changes.
+        // Let's add a visual timer since we have endTime.
+    }
+
+    return (
         <div className="flex flex-col items-center w-full bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px]">
             {/* Header */}
             <div className="w-full flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
                 <div className="flex flex-col gap-2 flex-1">
                     <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest">Topic</h2>
                     <span className="text-3xl font-black text-cyan-400">{gameState.currentTopic}</span>
-                    {isHost && (
+
+                    {/* Setup Phase - New Topic Input */}
+                    {isHost && gameState.phase !== 'THINKING' && (
                         <div className="flex gap-2 mt-2">
                             <input
                                 value={topicInput}
@@ -109,10 +126,20 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                                 placeholder="Set new topic..."
                                 className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-cyan-400"
                             />
-                            <button onClick={setTopic} className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded">SET</button>
+                            <button onClick={setTopic} className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded">SET TOPIC (5s Timer)</button>
                         </div>
                     )}
                 </div>
+
+                {/* TIMER DISPLAY */}
+                {gameState.phase === 'THINKING' && (
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                        <div className="text-[100px] font-black text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-pulse">
+                            Thinking...
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col items-end">
                     <span className="text-sm text-gray-500 font-bold uppercase">Lives</span>
                     <div className="flex gap-1">
@@ -123,33 +150,46 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                 </div>
             </div>
 
-            <div className="flex-1 w-full flex gap-4 overflow-hidden">
+            <div className="flex-1 w-full flex gap-4 overflow-hidden relative">
+
                 {/* Players List / Lives */}
                 <div className="w-48 flex flex-col gap-2 overflow-y-auto pr-2 border-r border-gray-700">
                     <h3 className="text-xs text-gray-500 font-bold uppercase">Players</h3>
-                    {room.players.map(p => (
-                        <div key={p.id} className={`p-2 rounded flex justify-between items-center group relative ${p.id === myId ? 'bg-gray-800 border border-gray-600' : 'bg-transparent'}`}>
-                            <span className={`text-sm font-bold truncate w-24 ${gameState.lives[p.id] > 0 ? 'text-gray-300' : 'text-gray-600 line-through'}`}>{p.name}</span>
-                            <span className="font-mono text-red-500 font-bold">{gameState.lives[p.id]}</span>
+                    {room.players.map(p => {
+                        const submitted = gameState.pendingAnswers?.find(a => a.playerId === p.id);
+                        return (
+                            <div key={p.id} className={`p-2 rounded flex justify-between items-center group relative ${p.id === myId ? 'bg-gray-800 border border-gray-600' : 'bg-transparent'}`}>
+                                <div className="flex flex-col">
+                                    <span className={`text-sm font-bold truncate w-24 ${gameState.lives[p.id] > 0 ? 'text-gray-300' : 'text-gray-600 line-through'}`}>{p.name}</span>
+                                    {gameState.phase === 'THINKING' && submitted && <span className="text-[10px] text-green-400 font-bold">READY</span>}
+                                </div>
+                                <span className="font-mono text-red-500 font-bold">{gameState.lives[p.id]}</span>
 
-                            {/* Host Manual Deduct Button */}
-                            {isHost && gameState.lives[p.id] > 0 && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); manualDeduct(p.id); }}
-                                    className="absolute right-8 text-red-500 hover:text-white bg-red-900/50 hover:bg-red-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Deduct Life">
-                                    -
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                                {/* Host Manual Deduct Button */}
+                                {isHost && gameState.lives[p.id] > 0 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); manualDeduct(p.id); }}
+                                        className="absolute right-8 text-red-500 hover:text-white bg-red-900/50 hover:bg-red-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Deduct Life">
+                                        -
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
-                {/* Game Feed (Chat Style: Top-Down) */}
+                {/* Game Feed (Chat Style) */}
                 <div className="flex-1 flex flex-col relative">
                     <div className="flex-1 overflow-y-auto flex flex-col gap-2 p-2 relative h-full">
-                        {gameState.answers.length === 0 && (
-                            <div className="text-center text-gray-600 italic mt-10">Waiting for topic and answers...</div>
+                        {gameState.answers.length === 0 && gameState.phase !== 'THINKING' && (
+                            <div className="text-center text-gray-600 italic mt-10">Waiting for topic...</div>
+                        )}
+
+                        {gameState.phase === 'THINKING' && (
+                            <div className="flex items-center justify-center h-full">
+                                <p className="text-cyan-400 animate-bounce">Submissions are hidden...</p>
+                            </div>
                         )}
 
                         {gameState.answers.map((a, i) => (
@@ -160,8 +200,8 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                                     </span>
                                     <span className="text-white text-lg break-words">{a.text}</span>
 
-                                    {/* Challenge Button */}
-                                    {!gameState.challenge && isAlive && (
+                                    {/* Challenge Button - Only in REVIEW phase */}
+                                    {!gameState.challenge && isAlive && gameState.phase === 'REVIEW' && (
                                         <button
                                             onClick={() => challengeAnswer(a.text)}
                                             className="absolute -right-2 -top-2 bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -216,13 +256,13 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                             value={myAnswer}
                             onChange={(e) => setMyAnswer(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={isAlive ? "Type an answer..." : "You are eliminated."}
-                            disabled={!isAlive || !!gameState.challenge?.active}
+                            placeholder={gameState.phase === 'THINKING' ? (isAlive ? "QUICK! TYPE A WORD!" : "Dead...") : "Wait for round..."}
+                            disabled={!isAlive || gameState.phase !== 'THINKING'}
                             className="flex-1 bg-gray-800 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
                         />
                         <button
                             onClick={submitAnswer}
-                            disabled={!isAlive || !!gameState.challenge?.active}
+                            disabled={!isAlive || gameState.phase !== 'THINKING'}
                             className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 rounded disabled:opacity-50 transition-colors">
                             SEND
                         </button>

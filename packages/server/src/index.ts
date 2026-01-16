@@ -168,7 +168,15 @@ io.on('connection', (socket) => {
         try {
             // Initialize game
             room.status = RoomStatus.GAME;
-            room.gameState = game.setup(room.players, gameConfig);
+            // Callback for games to trigger updates (e.g. timers)
+            const emitState = (newState: any) => {
+                if (room.status === RoomStatus.GAME) {
+                    room.gameState = newState;
+                    io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+                }
+            };
+
+            room.gameState = game.setup(room.players, gameConfig, emitState);
             io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
             console.log(`[Server] Game ${data.gameId} started successfully for Room ${room.id}.`);
         } catch (err) {

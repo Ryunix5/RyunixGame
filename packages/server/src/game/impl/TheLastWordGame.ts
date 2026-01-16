@@ -14,6 +14,9 @@ interface TheLastWordState extends GameState {
         startTime?: number;
     } | null;
     round: number;
+    phase: 'SETUP' | 'THINKING' | 'REVIEW'; // NEW PHASES
+    pendingAnswers: Array<{ playerId: string; text: string; timestamp: number }>; // Hidden answers
+    timerEndTime?: number;
     winner?: string;
 }
 
@@ -30,9 +33,12 @@ export class TheLastWordGame implements GamePlugin {
         "Musical Instruments", "Sports", "Video Game Consoles"
     ];
 
-    setup(players: Player[], config?: any): TheLastWordState {
+    private emitState?: (state: TheLastWordState) => void;
+
+    setup(players: Player[], config?: any, emitState?: (state: any) => void): TheLastWordState {
+        this.emitState = emitState;
         const lives: { [id: string]: number } = {};
-        players.forEach(p => lives[p.id] = 3);
+        players.forEach(p => lives[p.id] = 3); // 3 Lives
 
         return {
             type: 'the-last-word',
@@ -40,8 +46,10 @@ export class TheLastWordGame implements GamePlugin {
             currentTopic: "Waiting for Host...",
             answers: [],
             challenge: null,
-            round: 1
-        };
+            round: 1,
+            phase: 'SETUP', // SETUP -> THINKING -> REVIEW
+            pendingAnswers: []
+        } as TheLastWordState;
     }
 
     handleAction(state: TheLastWordState, senderId: string, action: any): TheLastWordState | null {

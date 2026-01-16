@@ -12,7 +12,7 @@ export interface GamePlugin {
     minPlayers: number;
     maxPlayers: number;
 
-    setup(players: Player[], config?: any): GameState;
+    setup(players: Player[], config?: any, emitState?: (state: GameState) => void): GameState;
 
     // Returns updated state, or null if invalid action
     handleAction(state: GameState, senderId: string, action: any): GameState | null;

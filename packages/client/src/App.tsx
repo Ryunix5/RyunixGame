@@ -10,19 +10,21 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 const AppContent: React.FC = () => {
     const { room } = useSocket();
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center font-sans selection:bg-cyan-500/30">
+        <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative">
             <AnimatedBackground />
-            <AnimatePresence mode="wait">
-                {!room ? (
-                    <AnimatedPage key="home" variant="fade">
-                        <Home />
-                    </AnimatedPage>
-                ) : (
-                    <AnimatedPage key="room" variant="slide">
-                        <RoomView />
-                    </AnimatedPage>
-                )}
-            </AnimatePresence>
+            <div className="min-h-screen flex items-center justify-center relative z-10">
+                <AnimatePresence mode="wait">
+                    {!room ? (
+                        <AnimatedPage key="home" variant="fade">
+                            <Home />
+                        </AnimatedPage>
+                    ) : (
+                        <AnimatedPage key="room" variant="slide">
+                            <RoomView />
+                        </AnimatedPage>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };

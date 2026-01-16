@@ -5,7 +5,7 @@ export const AnimatedBackground: React.FC = () => {
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
             {/* Animated Grid */}
             <div
-                className="absolute inset-0 opacity-10"
+                className="absolute inset-0 opacity-20"
                 style={{
                     backgroundImage: `
                         linear-gradient(to right, rgb(34, 211, 238) 1px, transparent 1px),

@@ -144,11 +144,25 @@ io.on('connection', (socket) => {
         }
 
         console.log('[Server] Initializing game...');
+
+        // Fetch content config
+        let gameConfig = {};
+        try {
+            const packs = contentManager.getContent(data.gameId);
+            if (packs && packs.length > 0) {
+                // Use the first pack found. In future, allow lobby to select pack.
+                gameConfig = packs[0].data;
+                console.log(`[Server] Loaded content pack: ${packs[0].packName} for ${data.gameId}`);
+            }
+        } catch (err) {
+            console.error('[Server] Failed to load content:', err);
+        }
+
         // Initialize game
         room.status = RoomStatus.GAME;
-        room.gameState = game.setup(room.players);
+        room.gameState = game.setup(room.players, gameConfig);
         io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
-        console.log('[Server] Game started. Room updated broadcast.');
+        console.log('[Server] Game started. Room updated broadcAst.');
     });
 
     socket.on(SocketEvents.GAME_ACTION, (data: { roomId: string, action: any }) => {

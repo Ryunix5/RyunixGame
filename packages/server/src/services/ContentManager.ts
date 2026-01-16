@@ -47,6 +47,14 @@ export class ContentManager {
         ];
 
         this.saveContent('the-last-word', 'Default Pack', { words: defaultWords });
+
+        const mindReaderWords = [
+            'Apple', 'Banana', 'Carrot', 'Dog', 'Elephant', 'Ferrari', 'Guitar', 'House',
+            'Ice Cream', 'Jungle', 'Kangaroo', 'Lemon', 'Moon', 'Ninja', 'Octopus',
+            'Pizza', 'Queen', 'Robot', 'Sun', 'Tiger', 'Umbrella', 'Violin', 'Watermelon',
+            'Xylophone', 'Yacht', 'Zebra'
+        ];
+        this.saveContent('mind-reader', 'Standard Deck', { words: mindReaderWords });
     }
 
     public getContent(gameType: string): GameContent[] {

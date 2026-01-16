@@ -18,7 +18,7 @@ export class SplitStealGame implements GamePlugin {
     maxPlayers = 8;
     readonly MAX_ROUNDS = 4;
 
-    setup(players: Player[]): SplitStealState {
+    setup(players: Player[], config?: any): SplitStealState {
         const trustPoints: { [playerId: string]: number } = {};
 
         // Handle Odd Number of Players

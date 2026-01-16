@@ -30,7 +30,7 @@ export class TheLastWordGame implements GamePlugin {
         "Musical Instruments", "Sports", "Video Game Consoles"
     ];
 
-    setup(players: Player[]): TheLastWordState {
+    setup(players: Player[], config?: any): TheLastWordState {
         const lives: { [id: string]: number } = {};
         players.forEach(p => lives[p.id] = 3);
 

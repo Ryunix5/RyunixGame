@@ -49,14 +49,14 @@ export const ContentEditor: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     gameType: selectedGame,
-                    packName: selectedPack.packName, // For now, only updating existing packs by name
+                    packName: selectedPack.packName,
                     data: parsedData
                 })
             });
             if (res.ok) {
                 setStatus('Saved successfully!');
                 setTimeout(() => setStatus(''), 2000);
-                fetchPacks(selectedGame); // Refresh
+                setTimeout(() => fetchPacks(selectedGame), 500); // Small delay to ensure DB write
             } else {
                 setStatus('Save failed');
             }
@@ -93,11 +93,26 @@ export const ContentEditor: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div>
                         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Content Packs</h2>
                         <div className="flex flex-col gap-2">
+                            <button
+                                onClick={() => {
+                                    const name = prompt("Enter new pack name:");
+                                    if (name) {
+                                        const newPack = { gameType: selectedGame, packName: name, data: {}, version: 1 };
+                                        selectPack(newPack);
+                                        // Ideally save immediately or let them edit first. 
+                                        // For now, selecting it lets them edit and then save.
+                                        setEditorContent('{}');
+                                    }
+                                }}
+                                className="p-3 rounded text-center font-bold bg-green-900/50 text-green-400 border border-green-700 hover:bg-green-800 transition-all uppercase tracking-wider text-sm"
+                            >
+                                + New Pack
+                            </button>
                             {packs.map(p => (
                                 <button
                                     key={p.id}
                                     onClick={() => selectPack(p)}
-                                    className={`p-3 rounded text-left font-bold transition-all ${selectedPack?.id === p.id ? 'bg-purple-900/50 text-purple-400 border border-purple-700' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}
+                                    className={`p-3 rounded text-left font-bold transition-all ${selectedPack?.id === p.id && selectedPack.packName === p.packName ? 'bg-purple-900/50 text-purple-400 border border-purple-700' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'}`}
                                 >
                                     {p.packName} <span className="text-xs opacity-50 block">v{p.version}</span>
                                 </button>

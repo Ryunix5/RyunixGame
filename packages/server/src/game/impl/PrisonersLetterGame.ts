@@ -19,7 +19,7 @@ export class PrisonersLetterGame implements GamePlugin {
     minPlayers = 3;
     maxPlayers = 10;
 
-    setup(players: Player[]): PrisonersLetterState {
+    setup(players: Player[], config?: any): PrisonersLetterState {
         const scores: { [id: string]: number } = {};
         players.forEach(p => scores[p.id] = 0);
 

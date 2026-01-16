@@ -24,19 +24,24 @@ export class MindReaderGame implements GamePlugin {
     minPlayers = 2;
     maxPlayers = 10;
 
-    setup(players: Player[]): MindReaderState {
+    setup(players: Player[], config?: any): MindReaderState {
         const scores: { [id: string]: number } = {};
         players.forEach(p => scores[p.id] = 0);
+
+        const words = config?.words && Array.isArray(config.words) ? config.words : DEFAULT_WORDS;
 
         return {
             type: 'mind-reader',
             phase: 'SETUP',
             setupMode: 'AUTO',
-            words: {},
+            words: {}, // Assigned in startRound
             pairings: [],
             scores,
-            guesses: {}
-        };
+            guesses: {},
+            // Store available words in state or accessible somehow? 
+            // Better to store them in game state so startRound can access them.
+            availableWords: words
+        } as MindReaderState;
     }
 
     handleAction(state: MindReaderState, senderId: string, action: any): MindReaderState | null {
@@ -89,10 +94,11 @@ export class MindReaderGame implements GamePlugin {
         }
 
         // 2. Assign Words
+        const wordList = (state as any).availableWords || DEFAULT_WORDS;
         if (state.setupMode === 'AUTO') {
             state.pairings.forEach(pair => {
-                const w1 = DEFAULT_WORDS[Math.floor(Math.random() * DEFAULT_WORDS.length)];
-                const w2 = DEFAULT_WORDS[Math.floor(Math.random() * DEFAULT_WORDS.length)];
+                const w1 = wordList[Math.floor(Math.random() * wordList.length)];
+                const w2 = wordList[Math.floor(Math.random() * wordList.length)];
                 state.words[pair[0]] = w1;
                 state.words[pair[1]] = w2;
             });

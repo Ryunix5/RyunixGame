@@ -20,7 +20,7 @@ export class BlindShapesGame implements GamePlugin {
 
     private readonly SUITS: Suit[] = ['♠️', '♥️', '♦️', '♣️'];
 
-    setup(players: Player[]): BlindShapesState {
+    setup(players: Player[], config?: any): BlindShapesState {
         const suits: { [id: string]: Suit } = {};
         players.forEach(p => {
             suits[p.id] = this.getRandomSuit();

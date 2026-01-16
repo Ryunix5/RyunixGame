@@ -19,7 +19,7 @@ export class UnknownToOneGame implements GamePlugin {
     minPlayers = 3;
     maxPlayers = 10;
 
-    setup(players: Player[]): UnknownToOneState {
+    setup(players: Player[], config?: any): UnknownToOneState {
         const scores: { [id: string]: number } = {};
         // "everyone starts with amount of points equal to number count divided by 2"
         const initialPoints = players.length / 2;

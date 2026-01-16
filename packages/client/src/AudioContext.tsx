@@ -42,7 +42,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize music audio element when user enables music
     const initializeMusicIfNeeded = () => {
         if (!musicRef.current) {
-            musicRef.current = new Audio('/music/menumain.mp3');
+            musicRef.current = new Audio('/music/mainmenu.mp3');
             musicRef.current.loop = true;
             musicRef.current.volume = musicVolume;
         }
@@ -80,7 +80,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (newValue) {
             // Create and play music in direct response to user click
             if (!musicRef.current) {
-                musicRef.current = new Audio('/music/menumain.mp3');
+                musicRef.current = new Audio('/music/mainmenu.mp3');
                 musicRef.current.loop = true;
                 musicRef.current.volume = musicVolume;
             }

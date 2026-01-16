@@ -38,45 +38,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const musicRef = useRef<HTMLAudioElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const hasInteracted = useRef(false);
 
-    // Initialize background music
-    useEffect(() => {
-        musicRef.current = new Audio('/music/menumain.mp3');
-        musicRef.current.loop = true;
-        musicRef.current.volume = musicVolume;
-
-        // Try to play music after first user interaction
-        const handleFirstInteraction = () => {
-            if (!hasInteracted.current && isMusicEnabled && musicRef.current) {
-                hasInteracted.current = true;
-                musicRef.current.play().catch(() => {
-                    console.log('Music playback still blocked');
-                });
-            }
-        };
-
-        // Listen for any click or keypress
-        document.addEventListener('click', handleFirstInteraction);
-        document.addEventListener('keydown', handleFirstInteraction);
-
-        if (isMusicEnabled) {
-            musicRef.current.play().catch(() => {
-                console.log('Music will play after first user interaction');
-            });
+    // Initialize music audio element when user enables music
+    const initializeMusicIfNeeded = () => {
+        if (!musicRef.current) {
+            musicRef.current = new Audio('/music/menumain.mp3');
+            musicRef.current.loop = true;
+            musicRef.current.volume = musicVolume;
         }
+    };
 
-        return () => {
-            document.removeEventListener('click', handleFirstInteraction);
-            document.removeEventListener('keydown', handleFirstInteraction);
-            if (musicRef.current) {
-                musicRef.current.pause();
-                musicRef.current = null;
-            }
-        };
-    }, []);
-
-    // Update music volume
+    // Update music volume when it changes
     useEffect(() => {
         if (musicRef.current) {
             musicRef.current.volume = musicVolume;
@@ -85,10 +57,16 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Handle music toggle
     useEffect(() => {
-        if (musicRef.current) {
-            if (isMusicEnabled) {
-                musicRef.current.play().catch(() => { });
-            } else {
+        if (isMusicEnabled) {
+            // Create audio element on first enable
+            initializeMusicIfNeeded();
+            if (musicRef.current) {
+                musicRef.current.play().catch(err => {
+                    console.log('Music blocked - click toggle button to start');
+                });
+            }
+        } else {
+            if (musicRef.current) {
                 musicRef.current.pause();
             }
         }
@@ -99,10 +77,16 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsMusicEnabled(newValue);
         localStorage.setItem('musicEnabled', String(newValue));
 
-        if (newValue && musicRef.current) {
-            hasInteracted.current = true;
+        if (newValue) {
+            // Create and play music in direct response to user click
+            if (!musicRef.current) {
+                musicRef.current = new Audio('/music/menumain.mp3');
+                musicRef.current.loop = true;
+                musicRef.current.volume = musicVolume;
+            }
             musicRef.current.play().catch(err => {
-                console.log('Music play failed:', err.message);
+                console.error('Music play failed:', err);
+                alert('Could not play music. Please check if the file exists and try again.');
             });
         }
     };

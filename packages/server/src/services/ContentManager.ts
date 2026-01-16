@@ -15,6 +15,7 @@ export class ContentManager {
     constructor() {
         // Ensure data directory exists or use relative path
         const dbPath = path.join(process.cwd(), 'content.db');
+        console.log('[ContentManager] Initializing DB at:', dbPath);
         this.db = new Database(dbPath, { verbose: console.log });
         this.initialize();
     }

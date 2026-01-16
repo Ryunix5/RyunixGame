@@ -143,26 +143,38 @@ io.on('connection', (socket) => {
             return;
         }
 
+
+
         console.log('[Server] Initializing game...');
 
         // Fetch content config
         let gameConfig = {};
         try {
-            const packs = contentManager.getContent(data.gameId);
-            if (packs && packs.length > 0) {
-                // Use the first pack found. In future, allow lobby to select pack.
-                gameConfig = packs[0].data;
-                console.log(`[Server] Loaded content pack: ${packs[0].packName} for ${data.gameId}`);
+            // Only try to load content if the manager is ready
+            if (contentManager) {
+                console.log(`[Server] Fetching content for ${data.gameId}...`);
+                const packs = contentManager.getContent(data.gameId);
+                if (packs && packs.length > 0) {
+                    gameConfig = packs[0].data;
+                    console.log(`[Server] Loaded content pack: ${packs[0].packName} for ${data.gameId}`);
+                } else {
+                    console.log(`[Server] No content packs found for ${data.gameId}, using defaults.`);
+                }
             }
         } catch (err) {
-            console.error('[Server] Failed to load content:', err);
+            console.error('[Server] Failed to load content (non-fatal):', err);
         }
 
-        // Initialize game
-        room.status = RoomStatus.GAME;
-        room.gameState = game.setup(room.players, gameConfig);
-        io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
-        console.log('[Server] Game started. Room updated broadcAst.');
+        try {
+            // Initialize game
+            room.status = RoomStatus.GAME;
+            room.gameState = game.setup(room.players, gameConfig);
+            io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+            console.log(`[Server] Game ${data.gameId} started successfully for Room ${room.id}.`);
+        } catch (err) {
+            console.error(`[Server] CRITICAL: Failed to setup game ${data.gameId}:`, err);
+            socket.emit(SocketEvents.ERROR, { message: 'Failed to start game due to server error.' });
+        }
     });
 
     socket.on(SocketEvents.GAME_ACTION, (data: { roomId: string, action: any }) => {

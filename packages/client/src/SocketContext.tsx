@@ -36,7 +36,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const newSocket = io('http://localhost:3001');
+        // Auto-detects URL. In dev (Vite), it needs explicit URL if ports differ.
+        // In prod (served by same node server), it defaults to window.location.
+        const serverUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
+        console.log('[Socket] Connecting to:', serverUrl || 'window.location.origin');
+
+        const newSocket = io(serverUrl);
         setSocket(newSocket);
 
         newSocket.on('connect', () => {

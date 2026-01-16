@@ -111,7 +111,7 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                     <span className="text-3xl font-black text-cyan-400">{gameState.currentTopic}</span>
 
                     {/* Host - New Topic Input */}
-                    {isHost && (
+                    {isHost && gameState.phase !== 'THINKING' && (
                         <div className="flex gap-2 mt-2">
                             <input
                                 value={topicInput}
@@ -119,7 +119,12 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                                 placeholder="Set new topic..."
                                 className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-cyan-400"
                             />
-                            <button onClick={setTopic} className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded">SET TOPIC (5s Timer)</button>
+                            <button
+                                onClick={setTopic}
+                                disabled={!topicInput.trim()}
+                                className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                                {gameState.phase === 'REVIEW' ? 'NEXT ROUND (5s Timer)' : 'SET TOPIC (5s Timer)'}
+                            </button>
                         </div>
                     )}
                 </div>

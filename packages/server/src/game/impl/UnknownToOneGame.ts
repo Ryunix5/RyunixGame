@@ -38,7 +38,7 @@ export class UnknownToOneGame implements GamePlugin {
         } as UnknownToOneState;
     }
 
-    handleAction(state: UnknownToOneState, senderId: string, action: any): UnknownToOneState | null {
+    handleAction(state: UnknownToOneState, senderId: string, action: any, dispatch?: (s: any) => void): UnknownToOneState | null {
         if (state.winnerIds) return null;
 
         if (state.phase === 'SETUP') {

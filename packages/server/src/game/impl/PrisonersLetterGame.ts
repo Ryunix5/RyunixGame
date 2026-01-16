@@ -35,7 +35,7 @@ export class PrisonersLetterGame implements GamePlugin {
         };
     }
 
-    handleAction(state: PrisonersLetterState, senderId: string, action: any): PrisonersLetterState | null {
+    handleAction(state: PrisonersLetterState, senderId: string, action: any, dispatch?: (s: any) => void): PrisonersLetterState | null {
         if (state.winnerIds) return null;
 
         if (state.phase === 'WRITING') {

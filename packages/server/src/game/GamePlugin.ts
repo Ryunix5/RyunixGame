@@ -15,7 +15,7 @@ export interface GamePlugin {
     setup(players: Player[], config?: any, emitState?: (state: GameState) => void): GameState;
 
     // Returns updated state, or null if invalid action
-    handleAction(state: GameState, senderId: string, action: any): GameState | null;
+    handleAction(state: GameState, senderId: string, action: any, dispatch?: (state: GameState) => void): GameState | null;
 
     // Check if game is complete
     isComplete(state: GameState): boolean;

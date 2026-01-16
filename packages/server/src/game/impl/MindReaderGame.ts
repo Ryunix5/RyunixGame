@@ -44,7 +44,7 @@ export class MindReaderGame implements GamePlugin {
         } as MindReaderState;
     }
 
-    handleAction(state: MindReaderState, senderId: string, action: any): MindReaderState | null {
+    handleAction(state: MindReaderState, senderId: string, action: any, dispatch?: (s: any) => void): MindReaderState | null {
         console.log(`[MindReader] handleAction. Phase: ${state.phase}, Action: ${action.type}, Sender: ${senderId}`);
 
         // Clone state (optional but safer) or modify direct if performance needed. 

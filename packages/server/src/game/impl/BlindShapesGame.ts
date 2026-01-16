@@ -36,7 +36,7 @@ export class BlindShapesGame implements GamePlugin {
         };
     }
 
-    handleAction(state: BlindShapesState, senderId: string, action: any): BlindShapesState | null {
+    handleAction(state: BlindShapesState, senderId: string, action: any, dispatch?: (s: any) => void): BlindShapesState | null {
         if (state.winnerIds) return null;
         if (state.eliminated.includes(senderId)) return null;
 

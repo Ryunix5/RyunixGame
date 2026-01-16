@@ -204,7 +204,14 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const newState = game.handleAction(room.gameState, socket.id, data.action);
+        const emitState = (newState: any) => {
+            if (room.status === RoomStatus.GAME) {
+                room.gameState = newState;
+                io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+            }
+        };
+
+        const newState = game.handleAction(room.gameState, socket.id, data.action, emitState);
         if (newState) {
             room.gameState = newState;
             io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);

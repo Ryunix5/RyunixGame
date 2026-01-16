@@ -49,7 +49,7 @@ export class SplitStealGame implements GamePlugin {
         };
     }
 
-    handleAction(state: SplitStealState, senderId: string, action: any): SplitStealState | null {
+    handleAction(state: SplitStealState, senderId: string, action: any, dispatch?: (s: any) => void): SplitStealState | null {
         if (action.type === 'next_round') {
             // Only allow if in REVEAL phase
             if (state.phase !== 'REVEAL') return null;

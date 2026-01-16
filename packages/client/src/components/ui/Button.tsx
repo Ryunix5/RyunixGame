@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -21,7 +22,7 @@ export const Button: React.FC<ButtonProps> = ({
     disabled,
     ...props
 }) => {
-    const baseStyles = "inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseStyles = "inline-flex items-center justify-center rounded-lg font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
         primary: "bg-slate-200 text-slate-900 hover:bg-white focus:ring-slate-200",
@@ -37,15 +38,18 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     return (
-        <button
+        <motion.button
             className={cn(baseStyles, variants[variant], sizes[size], className)}
             disabled={disabled || isLoading}
+            whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
+            transition={{ duration: 0.15 }}
             {...props}
         >
             {isLoading ? (
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
             ) : null}
             {children}
-        </button>
+        </motion.button>
     );
 };

@@ -1,0 +1,17 @@
+{
+  "name": "ryunix-games",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev --workspace=@ryunix/server",
+    "dev:client": "npm run dev --workspace=@ryunix/client",
+    "build": "npm run build --workspace=@ryunix/shared && npm run build --workspace=@ryunix/server && npm run build --workspace=@ryunix/client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -237,56 +237,29 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
                                     Waiting for Host Judgment...
                                 </div>
                             )}
-                            <p className="text-gray-400 text-sm mb-1">
-                                {room.players.find(p => p.id === gameState.challenge!.challengerId)?.name} challenged
-                            </p>
-                            <p className="text-3xl font-black text-white">"{gameState.challenge.answerText}"</p>
-                        </div>
-
-                                {isHost ? (
-                        <div className="flex flex-col gap-2">
-                            <p className="text-yellow-400 text-sm font-bold uppercase mb-2">Host Decision Required</p>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => judgeChallenge('valid')}
-                                    className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded font-bold transition-all text-white shadow-lg border border-green-500">
-                                    VALID (Punish Challenger)
-                                </button>
-                                <button
-                                    onClick={() => judgeChallenge('invalid')}
-                                    className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded font-bold transition-all text-white shadow-lg border border-red-500">
-                                    INVALID (Punish Answerer)
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-yellow-500 font-bold animate-pulse">
-                            Waiting for Host Judgment...
                         </div>
                     )}
-                </div>
-                        )}
 
-                {/* Input Area */}
-                <div className="mt-4 flex gap-2">
-                    <input
-                        type="text"
-                        value={myAnswer}
-                        onChange={(e) => setMyAnswer(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={gameState.phase === 'THINKING' ? (isAlive ? "QUICK! TYPE A WORD!" : "Dead...") : "Wait for round..."}
-                        disabled={!isAlive || gameState.phase !== 'THINKING'}
-                        className="flex-1 bg-gray-800 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
-                    />
-                    <button
-                        onClick={submitAnswer}
-                        disabled={!isAlive || gameState.phase !== 'THINKING'}
-                        className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 rounded disabled:opacity-50 transition-colors">
-                        SEND
-                    </button>
+                    {/* Input Area */}
+                    <div className="mt-4 flex gap-2">
+                        <input
+                            type="text"
+                            value={myAnswer}
+                            onChange={(e) => setMyAnswer(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={gameState.phase === 'THINKING' ? (isAlive ? "QUICK! TYPE A WORD!" : "Dead...") : "Wait for round..."}
+                            disabled={!isAlive || gameState.phase !== 'THINKING'}
+                            className="flex-1 bg-gray-800 border border-gray-600 rounded p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
+                        />
+                        <button
+                            onClick={submitAnswer}
+                            disabled={!isAlive || gameState.phase !== 'THINKING'}
+                            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-6 rounded disabled:opacity-50 transition-colors">
+                            SEND
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-            </div >
-            );
+    );
 };

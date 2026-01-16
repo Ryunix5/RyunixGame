@@ -12,6 +12,7 @@ export class RoomManager {
             isHost: true,
             isAlive: true,
             score: 0,
+            roomWins: 0,
             roomId: roomId,
             socketId: hostSocketId
         };
@@ -47,6 +48,7 @@ export class RoomManager {
             isHost: false,
             isAlive: true,
             score: 0,
+            roomWins: 0,
             roomId: roomId,
             socketId: socketId
         };

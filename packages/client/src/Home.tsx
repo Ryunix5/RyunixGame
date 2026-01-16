@@ -10,6 +10,14 @@ export const Home: React.FC = () => {
     const [roomId, setRoomId] = useState('');
     const [mode, setMode] = useState<'menu' | 'join' | 'create' | 'editor'>('menu');
 
+    // Load saved name from localStorage on mount
+    useEffect(() => {
+        const savedName = localStorage.getItem('playerName');
+        if (savedName) {
+            setName(savedName);
+        }
+    }, []);
+
     useEffect(() => {
         if (mode === 'join') {
             listRooms();
@@ -17,6 +25,11 @@ export const Home: React.FC = () => {
             return () => clearInterval(interval);
         }
     }, [mode, listRooms]);
+
+    const handleNameChange = (newName: string) => {
+        setName(newName);
+        localStorage.setItem('playerName', newName);
+    };
 
     const handleCreate = () => {
         if (!name) return;
@@ -90,7 +103,7 @@ export const Home: React.FC = () => {
                                     type="text"
                                     placeholder="ENTER NAME"
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => handleNameChange(e.target.value)}
                                     className="w-full p-4 bg-slate-900 border-2 border-slate-800 focus:border-slate-500 rounded text-white placeholder-slate-600 focus:outline-none font-bold text-lg transition-colors text-center uppercase"
                                 />
                             </div>
@@ -116,7 +129,7 @@ export const Home: React.FC = () => {
                                     type="text"
                                     placeholder="ENTER NAME"
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => handleNameChange(e.target.value)}
                                     className="w-full p-4 bg-slate-900 border-2 border-slate-800 focus:border-slate-500 rounded text-white placeholder-slate-600 focus:outline-none font-bold text-lg transition-colors text-center uppercase"
                                 />
                             </div>

@@ -239,11 +239,21 @@ io.on('connection', (socket) => {
                             roomRef.status = RoomStatus.RESULTS;
                             roomRef.gameState = { ...roomRef.gameState, results };
 
-                            // Persist scores
+                            // Find winner (highest score)
+                            let maxScore = -1;
+                            let winnerId: string | null = null;
                             Object.entries(results).forEach(([pid, score]) => {
-                                const p = roomRef.players.find(player => player.id === pid);
-                                if (p) p.score += score;
+                                if (score > maxScore) {
+                                    maxScore = score;
+                                    winnerId = pid;
+                                }
                             });
+
+                            // Increment roomWins for the winner
+                            if (winnerId) {
+                                const winner = roomRef.players.find(p => p.id === winnerId);
+                                if (winner) winner.roomWins++;
+                            }
 
                             io.to(roomRef.id).emit(SocketEvents.ROOM_UPDATED, roomRef);
                         }
@@ -256,11 +266,21 @@ io.on('connection', (socket) => {
                 room.status = RoomStatus.RESULTS;
                 room.gameState = { ...room.gameState, results };
 
-                // Persist scores
+                // Find winner (highest score)
+                let maxScore = -1;
+                let winnerId: string | null = null;
                 Object.entries(results).forEach(([pid, score]) => {
-                    const p = room.players.find(player => player.id === pid);
-                    if (p) p.score += score;
+                    if (score > maxScore) {
+                        maxScore = score;
+                        winnerId = pid;
+                    }
                 });
+
+                // Increment roomWins for the winner
+                if (winnerId) {
+                    const winner = room.players.find(p => p.id === winnerId);
+                    if (winner) winner.roomWins++;
+                }
 
                 io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
             }

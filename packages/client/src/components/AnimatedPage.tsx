@@ -36,7 +36,7 @@ export const AnimatedPage: React.FC<AnimatedPageProps> = ({ children, variant = 
             animate={config.animate}
             exit={config.exit}
             transition={config.transition}
-            style={{ width: '100%', height: '100%' }}
+            className="w-full h-full flex items-center justify-center"
         >
             {children}
         </motion.div>

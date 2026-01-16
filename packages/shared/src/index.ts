@@ -3,7 +3,8 @@ export interface Player {
     name: string;
     isHost: boolean;
     isAlive: boolean;
-    score: number;
+    score: number; // Temporary game score (resets each game)
+    roomWins: number; // Persistent wins in this room session
     roomId?: string;
     socketId: string;
 }

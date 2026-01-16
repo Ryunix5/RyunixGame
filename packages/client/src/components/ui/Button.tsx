@@ -37,19 +37,21 @@ export const Button: React.FC<ButtonProps> = ({
         lg: "px-8 py-4 text-base tracking-wide"
     };
 
+    const MotionButton = motion.button;
+
     return (
-        <motion.button
+        <MotionButton
             className={cn(baseStyles, variants[variant], sizes[size], className)}
             disabled={disabled || isLoading}
             whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
             whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
             transition={{ duration: 0.15 }}
-            {...props}
+            {...(props as any)}
         >
             {isLoading ? (
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
             ) : null}
             {children}
-        </motion.button>
+        </MotionButton>
     );
 };

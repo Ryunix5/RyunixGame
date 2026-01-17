@@ -68,6 +68,11 @@ export class TheLastWordGame implements GamePlugin {
             const answeredPlayers = new Set<string>();
 
             setTimeout(() => {
+                // If already in REVIEW (all players submitted early), don't clear answers
+                if (state.phase === 'REVIEW') {
+                    return;
+                }
+
                 // Reveal pending answers when timer expires
                 state.answers = [...state.pendingAnswers];
                 state.pendingAnswers = [];

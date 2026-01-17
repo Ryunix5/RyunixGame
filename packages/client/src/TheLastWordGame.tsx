@@ -31,8 +31,27 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     const myId = socket?.id;
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-    // Get Host Status (Assumes Host is set correctly in room)
-    const isHost = socket && room && (room.hostId === socket.id || room.players.find(p => p.id === socket.id)?.isHost);
+    const isHost = room?.players[0]?.id === myId;
+    const isAlive = gameState.lives[myId || ''] > 0;
+    const myLives = gameState.lives[myId || ''] || 0;
+
+    // Track previous lives to detect changes
+    const prevLivesRef = React.useRef<number>(myLives);
+
+    React.useEffect(() => {
+        // Detect life loss
+        if (prevLivesRef.current > myLives && myLives >= 0) {
+            playSound('lifeLost');
+        }
+        prevLivesRef.current = myLives;
+    }, [myLives, playSound]);
+
+    // Detect victory
+    React.useEffect(() => {
+        if (gameState.winner) {
+            playSound('victory');
+        }
+    }, [gameState.winner, playSound]);
 
     // Auto-scroll to bottom on new messages
     React.useEffect(() => {
@@ -40,9 +59,6 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     }, [gameState.answers]);
 
     if (!room || !myId) return null;
-
-    const myLives = gameState.lives[myId] || 0;
-    const isAlive = myLives > 0;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && myAnswer.trim()) {
@@ -60,13 +76,13 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     };
 
     const setTopic = () => {
-        if (socket && topicInput.trim()) {
-            playSound('roundStart');
-            socket.emit(SocketEvents.GAME_ACTION, {
-                action: { type: 'set_topic', topic: topicInput }
-            });
-            setTopicInput('');
-        }
+        if (!isHost || !topicInput.trim()) return;
+        playSound('roundStart');
+        socket?.emit(SocketEvents.GAME_ACTION, {
+            roomId: room.id,
+            action: { type: 'set_topic', topic: topicInput.trim() }
+        });
+        setTopicInput('');
     };
 
     const challengeAnswer = (answerText: string) => {

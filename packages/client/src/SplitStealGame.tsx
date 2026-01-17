@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSocket } from './SocketContext';
+import { useAudio } from './AudioContext';
 import { SocketEvents } from '@ryunix/shared';
 import { Leaderboard } from './Leaderboard';
 import { ChatComponent } from './ChatComponent';
@@ -10,6 +11,7 @@ import { ChatComponent } from './ChatComponent';
 
 export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameState }) => {
     const { socket, room } = useSocket();
+    const { playSound } = useAudio();
     const myId = socket?.id;
     const { round, trustPoints, pairings, decisions, history } = gameState;
 
@@ -23,6 +25,7 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
     const opponentDecision = decisions[opponentId || ''];
 
     const sendDecision = (value: 'split' | 'steal') => {
+        playSound('click');
         if (!socket || !room) return;
         socket.emit(SocketEvents.GAME_ACTION, {
             roomId: room.id,

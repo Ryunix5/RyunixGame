@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSocket } from './SocketContext';
+import { useAudio } from './AudioContext';
 import { RoomStatus, SocketEvents } from '@ryunix/shared';
 import { SplitStealGameComponent } from './SplitStealGame';
 import { TheLastWordGame } from './TheLastWordGame';
@@ -48,7 +49,17 @@ const VoiceControls: React.FC = () => {
 
 export const RoomView: React.FC = () => {
     const { room, socket, leaveRoom: socketLeaveRoom } = useSocket();
+    const { playSound } = useAudio();
     const { leaveVoice, joined } = useVoice();
+
+    // Play victory sound when game finishes
+    const prevStatusRef = React.useRef<RoomStatus>();
+    React.useEffect(() => {
+        if (prevStatusRef.current === RoomStatus.PLAYING && room.status === RoomStatus.FINISHED) {
+            playSound('victory');
+        }
+        prevStatusRef.current = room.status;
+    }, [room.status, playSound]);
 
     const leaveRoom = () => {
         if (joined) leaveVoice();

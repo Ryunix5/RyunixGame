@@ -55,11 +55,13 @@ export const RoomView: React.FC = () => {
     // Play victory sound when game finishes
     const prevStatusRef = React.useRef<RoomStatus>();
     React.useEffect(() => {
-        if (prevStatusRef.current === RoomStatus.PLAYING && room.status === RoomStatus.FINISHED) {
+        if (room && prevStatusRef.current === RoomStatus.IN_GAME && room.status === RoomStatus.RESULTS) {
             playSound('victory');
         }
-        prevStatusRef.current = room.status;
-    }, [room.status, playSound]);
+        if (room) {
+            prevStatusRef.current = room.status;
+        }
+    }, [room?.status, playSound]);
 
     const leaveRoom = () => {
         if (joined) leaveVoice();

@@ -30,7 +30,9 @@ export class TheLastWordGame implements GamePlugin {
         "Fruits", "Countries", "Movies from the 90s", "Programming Languages",
         "Pizza Toppings", "Superheroes", "Board Games", "Capital Cities",
         "Brands of Cars", "Animals that lay eggs", "Things that are red",
-        "Musical Instruments", "Sports", "Video Game Consoles"
+        "Musical Instruments", "Sports", "Video Game Consoles",
+        "European Countries", "Asian Countries", "Desserts", "Ice Cream Flavors",
+        "Marvel Characters", "Disney Movies", "Famous Singers", "Netflix Series"
     ];
 
     private emitState?: (state: TheLastWordState) => void;

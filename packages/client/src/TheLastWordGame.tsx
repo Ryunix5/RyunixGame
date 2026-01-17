@@ -47,8 +47,10 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     }, [myLives, playSound]);
 
     // Detect victory
+    const hasPlayedVictoryRef = React.useRef(false);
     React.useEffect(() => {
-        if (gameState.winner) {
+        if (gameState.winner && !hasPlayedVictoryRef.current) {
+            hasPlayedVictoryRef.current = true;
             playSound('victory');
         }
     }, [gameState.winner, playSound]);

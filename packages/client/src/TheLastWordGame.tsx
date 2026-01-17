@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSocket } from './SocketContext';
+import { useAudio } from './AudioContext';
 import { SocketEvents } from '@ryunix/shared';
 
 // Mirrors backend state
@@ -22,8 +23,9 @@ interface TheLastWordState {
     winner?: string;
 }
 
-export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
+export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) => {
+    const { room, socket } = useSocket();
+    const { playSound } = useAudio();
     const [myAnswer, setMyAnswer] = useState('');
     const [topicInput, setTopicInput] = useState('');
     const myId = socket?.id;
@@ -58,12 +60,13 @@ export const TheLastWordGame: React.FC<{ gameState: TheLastWordState }> = ({ gam
     };
 
     const setTopic = () => {
-        if (!isHost || !topicInput.trim()) return;
-        socket?.emit(SocketEvents.GAME_ACTION, {
-            roomId: room.id,
-            action: { type: 'set_topic', topic: topicInput.trim() }
-        });
-        setTopicInput('');
+        if (socket && topicInput.trim()) {
+            playSound('roundStart');
+            socket.emit(SocketEvents.GAME_ACTION, {
+                action: { type: 'set_topic', topic: topicInput }
+            });
+            setTopicInput('');
+        }
     };
 
     const challengeAnswer = (answerText: string) => {

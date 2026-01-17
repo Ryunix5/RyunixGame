@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 interface AudioContextType {
-    playSound: (sound: 'click' | 'success' | 'error') => void;
+    playSound: (sound: 'click' | 'success' | 'error' | 'roundStart' | 'timerTick' | 'lifeLost' | 'victory') => void;
     toggleMusic: () => void;
     isMusicEnabled: boolean;
     musicVolume: number;
@@ -57,7 +57,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 initializeMusicIfNeeded();
                 if (musicRef.current) {
                     musicRef.current.play().catch(() => {
-                        console.log('Music autoplay blocked');
+                        // Music autoplay blocked
                     });
                 }
             }
@@ -85,7 +85,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             initializeMusicIfNeeded();
             if (musicRef.current) {
                 musicRef.current.play().catch(() => {
-                    console.log('Music blocked - click toggle button to start');
+                    // Music blocked
                 });
             }
         } else {
@@ -125,7 +125,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     // Simple SFX using Web Audio API
-    const playSound = (sound: 'click' | 'success' | 'error') => {
+    const playSound = (sound: 'click' | 'success' | 'error' | 'roundStart' | 'timerTick' | 'lifeLost' | 'victory') => {
         if (!audioContextRef.current) {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
@@ -138,12 +138,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         gainNode.connect(ctx.destination);
 
         const soundConfig = {
-            click: { frequency: 800, duration: 0.05 },
-            success: { frequency: 1200, duration: 0.15 },
-            error: { frequency: 400, duration: 0.2 }
+            click: { frequency: 800, duration: 0.05, type: 'sine' as OscillatorType },
+            success: { frequency: 1200, duration: 0.15, type: 'triangle' as OscillatorType },
+            error: { frequency: 400, duration: 0.2, type: 'sawtooth' as OscillatorType },
+            roundStart: { frequency: 1000, duration: 0.3, type: 'triangle' as OscillatorType },
+            timerTick: { frequency: 600, duration: 0.05, type: 'square' as OscillatorType },
+            lifeLost: { frequency: 300, duration: 0.4, type: 'sawtooth' as OscillatorType },
+            victory: { frequency: 1500, duration: 0.5, type: 'sine' as OscillatorType }
         };
 
         const config = soundConfig[sound];
+        oscillator.type = config.type;
         oscillator.frequency.value = config.frequency;
         gainNode.gain.setValueAtTime(sfxVolume * 0.3, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.duration);

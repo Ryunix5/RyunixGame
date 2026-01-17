@@ -39,19 +39,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Auto-detects URL. In dev (Vite), it needs explicit URL if ports differ.
         // In prod (served by same node server), it defaults to window.location.
         const serverUrl = (import.meta as any).env.PROD ? '/' : 'http://localhost:3001';
-        console.log('[Socket] Connecting to:', serverUrl || 'window.location.origin');
 
         const newSocket = io(serverUrl);
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
             setIsConnected(true);
-            console.log('Connected to server');
         });
 
         newSocket.on('disconnect', () => {
             setIsConnected(false);
-            console.log('Disconnected from server');
         });
 
         newSocket.on(SocketEvents.ROOM_UPDATED, (updatedRoom: Room) => {
@@ -73,11 +70,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
 
     const createRoom = (hostName: string) => {
-        console.log('[SocketContext] createRoom called with:', hostName);
-        console.log('[SocketContext] Socket exists:', !!socket);
-        console.log('[SocketContext] Socket connected:', socket?.connected);
         if (socket) {
-            console.log('[SocketContext] Emitting CREATE_ROOM event');
             socket.emit(SocketEvents.CREATE_ROOM, { hostName });
         } else {
             console.error('[SocketContext] Socket not available!');

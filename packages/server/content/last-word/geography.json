@@ -1,0 +1,22 @@
+{
+    "id": "geography",
+    "name": "Geography",
+    "description": "Places, locations, and world knowledge",
+    "difficulty": "medium",
+    "topics": [
+        "European Countries",
+        "Asian Countries",
+        "US Capital Cities",
+        "Famous Landmarks",
+        "Oceans and Seas",
+        "Mountains",
+        "Rivers",
+        "Islands",
+        "Deserts",
+        "National Parks",
+        "World Capitals",
+        "African Countries",
+        "South American Countries",
+        "Continents"
+    ]
+}

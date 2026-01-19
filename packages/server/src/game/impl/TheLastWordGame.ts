@@ -1,5 +1,6 @@
 import { Player } from '@ryunix/shared';
 import { GamePlugin, GameState } from '../GamePlugin';
+import { packageLoader } from '../../services/PackageLoader';
 
 interface TheLastWordState extends GameState {
     lives: { [playerId: string]: number };
@@ -26,14 +27,17 @@ export class TheLastWordGame implements GamePlugin {
     minPlayers = 2; // Needs at least 2 to challenge
     maxPlayers = 16;
 
-    private topics = [
-        "Fruits", "Countries", "Movies from the 90s", "Programming Languages",
-        "Pizza Toppings", "Superheroes", "Board Games", "Capital Cities",
-        "Brands of Cars", "Animals that lay eggs", "Things that are red",
-        "Musical Instruments", "Sports", "Video Game Consoles",
-        "European Countries", "Asian Countries", "Desserts", "Ice Cream Flavors",
-        "Marvel Characters", "Disney Movies", "Famous Singers", "Netflix Series"
-    ];
+    private getRandomTopic(): string {
+        const topics = packageLoader.getAllTopics('last-word');
+
+        // Fallback to basic topics if no packages loaded
+        if (topics.length === 0) {
+            const fallback = ["Fruits", "Countries", "Sports", "Movies", "Colors"];
+            return fallback[Math.floor(Math.random() * fallback.length)];
+        }
+
+        return topics[Math.floor(Math.random() * topics.length)];
+    }
 
     private emitState?: (state: TheLastWordState) => void;
 

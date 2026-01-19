@@ -1,0 +1,23 @@
+{
+    "id": "food",
+    "name": "Food & Drinks",
+    "description": "All things edible and drinkable",
+    "difficulty": "easy",
+    "topics": [
+        "Italian Dishes",
+        "Mexican Food",
+        "Desserts",
+        "Ice Cream Flavors",
+        "Candy Brands",
+        "Breakfast Foods",
+        "Types of Cheese",
+        "Chinese Food",
+        "Coffee Drinks",
+        "Cocktails",
+        "Soda Brands",
+        "Chips Flavors",
+        "Pasta Types",
+        "Types of Bread",
+        "Spices and Herbs"
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "id": "pop-culture",
+    "name": "Pop Culture",
+    "description": "Movies, music, TV, and entertainment",
+    "difficulty": "medium",
+    "topics": [
+        "Marvel Characters",
+        "Disney Movies",
+        "Harry Potter Characters",
+        "Famous Singers",
+        "Netflix Series",
+        "Pixar Movies",
+        "90s TV Shows",
+        "Rappers",
+        "Anime Characters",
+        "Superhero Movies",
+        "Band Names",
+        "Video Game Characters",
+        "Reality TV Shows",
+        "YouTube Channels",
+        "TikTok Trends"
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "id": "general",
+    "name": "General Topics",
+    "description": "Classic categories everyone knows",
+    "difficulty": "easy",
+    "topics": [
+        "Fruits",
+        "Countries",
+        "Pizza Toppings",
+        "Sports",
+        "Colors",
+        "Animals",
+        "Car Brands",
+        "US States",
+        "Cities",
+        "Movies",
+        "TV Shows",
+        "Video Games",
+        "Books",
+        "Vegetables",
+        "Drinks",
+        "Fast Food Chains",
+        "Clothing Brands",
+        "Dog Breeds",
+        "Types of Music",
+        "School Subjects"
+    ]
+}

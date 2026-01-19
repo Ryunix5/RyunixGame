@@ -6,7 +6,7 @@
         "dev": "nodemon src/index.ts",
         "prebuild": "npm run build --prefix ../shared",
         "build": "tsc",
-        "postbuild": "xcopy content dist\\content\\ /E /I /Y",
+        "postbuild": "copyfiles -u 1 content/**/* dist",
         "start": "node dist/index.js"
     },
     "dependencies": {
@@ -22,6 +22,7 @@
         "@types/express": "^4.17.21",
         "@types/node": "^20.11.16",
         "@types/uuid": "^9.0.8",
+        "copyfiles": "^2.4.1",
         "nodemon": "^3.0.3",
         "ts-node": "^10.9.2"
     }

@@ -63,7 +63,7 @@ export class TheLastWordGame implements GamePlugin {
 
         // ACTION: SET_TOPIC (Host Only - enforced by UI, assumed valid here)
         if (action.type === 'set_topic') {
-            state.currentTopic = action.topic || "Unknown Topic";
+            state.currentTopic = action.topic || this.getRandomTopic();
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
@@ -232,3 +232,4 @@ export class TheLastWordGame implements GamePlugin {
         return scores;
     }
 }
+

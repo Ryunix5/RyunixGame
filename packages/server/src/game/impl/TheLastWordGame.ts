@@ -197,11 +197,6 @@ export class TheLastWordGame implements GamePlugin {
         // Deprecated
     }
 
-    private getRandomTopic(): string {
-        // Deprecated
-        return "";
-    }
-
     private endThinkingPhase(state: TheLastWordState, dispatch?: (s: any) => void) {
         // Move pending answers to main answers
         state.answers = [...state.pendingAnswers];

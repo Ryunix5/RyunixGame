@@ -19,6 +19,7 @@ interface TheLastWordState extends GameState {
     pendingAnswers: Array<{ playerId: string; text: string; timestamp: number }>; // Hidden answers
     timerEndTime?: number;
     winner?: string;
+    selectedPackages: string[]; // Package IDs to use
 }
 
 export class TheLastWordGame implements GamePlugin {
@@ -27,8 +28,8 @@ export class TheLastWordGame implements GamePlugin {
     minPlayers = 2; // Needs at least 2 to challenge
     maxPlayers = 16;
 
-    private getRandomTopic(): string {
-        const topics = packageLoader.getAllTopics('last-word');
+    private getRandomTopic(state: TheLastWordState): string {
+        const packageIds = state.selectedPackages && state.selectedPackages.length > 0 ? state.selectedPackages : ['general', 'pop-culture', 'geography', 'food']; const topics = packageLoader.getTopicsFromPackages('last-word', packageIds);
 
         // Fallback to basic topics if no packages loaded
         if (topics.length === 0) {
@@ -54,7 +55,8 @@ export class TheLastWordGame implements GamePlugin {
             challenge: null,
             round: 1,
             phase: 'SETUP', // SETUP -> THINKING -> REVIEW
-            pendingAnswers: []
+            pendingAnswers: [],
+            selectedPackages: ['general', 'pop-culture', 'geography', 'food'] // All by default
         } as TheLastWordState;
     }
 
@@ -63,7 +65,7 @@ export class TheLastWordGame implements GamePlugin {
 
         // ACTION: SET_TOPIC (Host Only - enforced by UI, assumed valid here)
         if (action.type === 'set_topic') {
-            state.currentTopic = action.topic || this.getRandomTopic();
+            state.currentTopic = action.topic || this.getRandomTopic(state);
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
@@ -232,4 +234,7 @@ export class TheLastWordGame implements GamePlugin {
         return scores;
     }
 }
+
+
+
 

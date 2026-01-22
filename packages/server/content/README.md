@@ -1,63 +1,45 @@
 # Game Content Packages
 
-This directory contains game content organized by game type.
+This directory contains content packages that can be used by **all games**.
 
 ## Structure
 
 ```
 content/
-├── last-word/          # Topics for "The Last Word" game
-│   ├── general.json
-│   ├── pop-culture.json
-│   ├── geography.json
-│   └── food.json
-├── unknown-to-one/     # Words for "Unknown to One" (future)
-└── mind-reader/        # Prompts for "Mind Reader" (future)
+  packages/          # Shared content packages for all games
+    general.json
+    pop-culture.json
+    geography.json
+    food.json
 ```
 
-## Adding Topics to "The Last Word"
+## How It Works
 
-### Edit Existing Package
+1. Host selects a game
+2. Host selects which package to use
+3. Game uses content from that package
 
-Edit any `.json` file in `last-word/`:
+## Adding New Packages
+
+Create a new JSON file in `packages/`:
 
 ```json
 {
-  "id": "general",
-  "name": "General Topics",
+  "id": "your-package-id",
+  "name": "Your Package Name",
+  "description": "What this package contains",
   "difficulty": "easy",
-  "topics": [
-    "Fruits",
-    "Countries",
-    "Your New Topic Here"
-  ]
+  "topics": ["Topic 1", "Topic 2", "Topic 3"]
 }
 ```
 
-### Create New Package
+## Package Format
 
-Create a new `.json` file (e.g., `sports.json`):
+Each package should have:
+- `id`: Unique identifier
+- `name`: Display name
+- `description`: What it contains
+- `difficulty`: "easy", "medium", or "hard"
+- `topics`: Array of content items
 
-```json
-{
-  "id": "sports",
-  "name": "Sports Topics",
-  "description": "Sports and athletics",
-  "difficulty": "medium",
-  "topics": [
-    "NBA Teams",
-    "Olympic Sports",
-    "Famous Athletes"
-  ]
-}
-```
-
-## Deploying Changes
-
-```bash
-git add content/
-git commit -m "Added new topics"
-git push
-```
-
-Topics will be loaded automatically on server restart!
+All games can use any package!

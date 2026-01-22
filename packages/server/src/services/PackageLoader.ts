@@ -17,35 +17,35 @@ class PackageLoader {
     private contentDir: string;
 
     constructor() {
-        // Point to content directory
-        this.contentDir = path.join(__dirname, '../../content');
+        // Point to shared packages directory
+        this.contentDir = path.join(__dirname, '../../content/packages');
     }
 
     /**
-     * Loads all packages for a specific game
+     * Loads all available packages (shared across all games)
      */
-    loadPackages(game: string): ContentPackage[] {
+    loadPackages(): ContentPackage[] {
         // Return cached if available
-        if (this.cache.has(game)) {
-            return this.cache.get(game)!;
+        const cacheKey = 'all-packages';
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey)!;
         }
 
-        const gameDir = path.join(this.contentDir, game);
         const packages: ContentPackage[] = [];
 
         // Check if directory exists
-        if (!fs.existsSync(gameDir)) {
-            console.warn(`[PackageLoader] No content directory for: ${game}`);
+        if (!fs.existsSync(this.contentDir)) {
+            console.warn(`[PackageLoader] No packages directory found`);
             return [];
         }
 
         // Read all .json files
         try {
-            const files = fs.readdirSync(gameDir).filter(f => f.endsWith('.json'));
+            const files = fs.readdirSync(this.contentDir).filter(f => f.endsWith('.json'));
 
             for (const file of files) {
                 try {
-                    const filePath = path.join(gameDir, file);
+                    const filePath = path.join(this.contentDir, file);
                     const content = fs.readFileSync(filePath, 'utf-8');
                     const pkg = JSON.parse(content) as ContentPackage;
                     packages.push(pkg);
@@ -55,39 +55,46 @@ class PackageLoader {
             }
 
             // Cache the results
-            this.cache.set(game, packages);
-            console.log(`[PackageLoader] Loaded ${packages.length} packages for ${game}`);
+            this.cache.set(cacheKey, packages);
+            console.log(`[PackageLoader] Loaded ${packages.length} packages`);
         } catch (error) {
-            console.error(`[PackageLoader] Error reading directory ${gameDir}:`, error);
+            console.error(`[PackageLoader] Error reading packages directory:`, error);
         }
 
         return packages;
     }
 
     /**
+     * Gets a specific package by ID
+     */
+    getPackage(packageId: string): ContentPackage | undefined {
+        const packages = this.loadPackages();
+        return packages.find(p => p.id === packageId);
+    }
+
+    /**
      * Gets all topics from all packages (combined)
      */
-    getAllTopics(game: string): string[] {
-        const packages = this.loadPackages(game);
+    getAllTopics(): string[] {
+        const packages = this.loadPackages();
         const allTopics = packages.flatMap(p => p.topics || []);
         return allTopics;
     }
 
     /**
-     * Gets topics filtered by difficulty
+     * Gets topics from a specific package
      */
-    getTopicsByDifficulty(game: string, difficulty: 'easy' | 'medium' | 'hard'): string[] {
-        const packages = this.loadPackages(game);
-        const filtered = packages.filter(p => p.difficulty === difficulty);
-        return filtered.flatMap(p => p.topics || []);
+    getTopicsFromPackage(packageId: string): string[] {
+        const pkg = this.getPackage(packageId);
+        return pkg?.topics || [];
     }
 
     /**
-     * Gets topics from specific package IDs
+     * Gets topics filtered by difficulty
      */
-    getTopicsFromPackages(game: string, packageIds: string[]): string[] {
-        const packages = this.loadPackages(game);
-        const filtered = packages.filter(p => packageIds.includes(p.id));
+    getTopicsByDifficulty(difficulty: 'easy' | 'medium' | 'hard'): string[] {
+        const packages = this.loadPackages();
+        const filtered = packages.filter(p => p.difficulty === difficulty);
         return filtered.flatMap(p => p.topics || []);
     }
 

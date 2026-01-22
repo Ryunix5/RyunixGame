@@ -19,6 +19,7 @@ const PORT = 3001;
 import { RoomManager } from './RoomManager';
 import { GameRegistry } from './game/GameRegistry';
 import { ContentManager } from './services/ContentManager';
+import { packageLoader } from './services/PackageLoader';
 
 // Game Implementations
 import { SplitStealGame } from './game/impl/SplitStealGame';

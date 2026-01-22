@@ -195,7 +195,9 @@ io.on('connection', (socket) => {
                 }
             };
 
-            room.gameState = game.setup(room.players, gameConfig, emitState);
+            const config = data.packageId ? { packageId: data.packageId } : {};
+            console.log(`[Server] Setting up game with config:`, config);
+            room.gameState = game.setup(room.players, config, emitState);
             io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
             console.log(`[Server] Game ${data.gameId} started successfully for Room ${room.id}.`);
         } catch (err) {

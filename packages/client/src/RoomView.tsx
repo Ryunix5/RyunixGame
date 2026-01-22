@@ -161,6 +161,16 @@ export const RoomView: React.FC = () => {
                         ))}
                     </div>
 
+                    {/* Package Selection */}
+                    {isHost && (
+                        <div className="w-full">
+                            <PackageSelector
+                                selectedPackageId={selectedPackageId}
+                                onSelectionChange={setSelectedPackageId}
+                            />
+                        </div>
+                    )}
+
                     {isHost && (
                         <div className="flex justify-end pt-4">
                             <Button size="lg" onClick={startGame} className="px-12">

@@ -1,7 +1,7 @@
 {
     "id": "clash-royale",
     "name": "Clash Royale",
-    "description": "Cards, arenas, and game elements from Clash Royale",
+    "description": "Cards from Clash Royale",
     "difficulty": "medium",
     "topics": [
         "Knight",
@@ -58,10 +58,6 @@
         "Golden Knight",
         "Archer Queen",
         "Skeleton King",
-        "Mighty Miner",
-        "Goblin Stadium",
-        "Builder's Workshop",
-        "Legendary Arena",
-        "Clash of Clans Arena"
+        "Mighty Miner"
     ]
 }

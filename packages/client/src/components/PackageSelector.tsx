@@ -11,37 +11,23 @@ interface Package {
 }
 
 interface PackageSelectorProps {
-    gameId: string;
-    selectedPackages: string[];
-    onSelectionChange: (packageIds: string[]) => void;
+    selectedPackageId: string;
+    onSelectionChange: (packageId: string) => void;
 }
 
-export function PackageSelector({ gameId, selectedPackages, onSelectionChange }: PackageSelectorProps) {
+export function PackageSelector({ selectedPackageId, onSelectionChange }: PackageSelectorProps) {
     const [packages, setPackages] = useState<Package[]>([]);
     const { socket } = useSocket();
 
     useEffect(() => {
         if (!socket) return;
 
-        socket.emit('getAvailablePackages', gameId, (pkgs: Package[]) => {
+        socket.emit('getAvailablePackages', (pkgs: Package[]) => {
             setPackages(pkgs);
         });
-    }, [socket, gameId]);
+    }, [socket]);
 
-    const togglePackage = (id: string) => {
-        const newSelection = selectedPackages.includes(id)
-            ? selectedPackages.filter(p => p !== id)
-            : [...selectedPackages, id];
-
-        // Don't allow deselecting all packages
-        if (newSelection.length > 0) {
-            onSelectionChange(newSelection);
-        }
-    };
-
-    const totalTopics = packages
-        .filter(p => selectedPackages.includes(p.id))
-        .reduce((sum, p) => sum + p.topicCount, 0);
+    const selectedPackage = packages.find(p => p.id === selectedPackageId);
 
     return (
         <div style={{
@@ -59,14 +45,14 @@ export function PackageSelector({ gameId, selectedPackages, onSelectionChange }:
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
             }}>
-                Select Topic Categories
+                Select Content Package
             </h3>
             <p style={{
                 fontSize: '14px',
                 color: '#9ca3af',
                 marginBottom: '16px'
             }}>
-                {totalTopics} topics selected
+                {selectedPackage ? `${selectedPackage.name} - ${selectedPackage.topicCount} topics` : 'Choose a package'}
             </p>
 
             <div style={{
@@ -82,21 +68,22 @@ export function PackageSelector({ gameId, selectedPackages, onSelectionChange }:
                             display: 'flex',
                             alignItems: 'center',
                             padding: '16px',
-                            background: selectedPackages.includes(pkg.id)
+                            background: selectedPackageId === pkg.id
                                 ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))'
                                 : 'rgba(255, 255, 255, 0.05)',
                             borderRadius: '12px',
                             cursor: 'pointer',
-                            border: selectedPackages.includes(pkg.id)
+                            border: selectedPackageId === pkg.id
                                 ? '2px solid #6366f1'
                                 : '2px solid transparent',
                             transition: 'all 0.2s ease'
                         }}
                     >
                         <input
-                            type="checkbox"
-                            checked={selectedPackages.includes(pkg.id)}
-                            onChange={() => togglePackage(pkg.id)}
+                            type="radio"
+                            name="package"
+                            checked={selectedPackageId === pkg.id}
+                            onChange={() => onSelectionChange(pkg.id)}
                             style={{
                                 width: '20px',
                                 height: '20px',
@@ -140,17 +127,6 @@ export function PackageSelector({ gameId, selectedPackages, onSelectionChange }:
                     </motion.label>
                 ))}
             </div>
-
-            {selectedPackages.length === 0 && (
-                <p style={{
-                    marginTop: '12px',
-                    fontSize: '14px',
-                    color: '#ef4444',
-                    textAlign: 'center'
-                }}>
-                    ⚠️ Select at least one category
-                </p>
-            )}
         </div>
     );
 }

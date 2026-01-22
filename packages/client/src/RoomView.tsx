@@ -14,6 +14,7 @@ import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from './VoiceContext';
+import { PackageSelector } from './components/PackageSelector';
 
 const GAMES = [
     { id: 'split-steal', name: 'Split or Steal', desc: 'Trust and betrayal.', players: '2' },
@@ -51,6 +52,7 @@ export const RoomView: React.FC = () => {
     const { room, socket, leaveRoom: socketLeaveRoom } = useSocket();
     const { playSound } = useAudio();
     const { leaveVoice, joined } = useVoice();
+    const [selectedPackageId, setSelectedPackageId] = React.useState<string>('general');
 
     // Play victory sound when game finishes
     const prevStatusRef = React.useRef<RoomStatus>();
@@ -91,8 +93,8 @@ export const RoomView: React.FC = () => {
             console.error('[Client] Not host');
             return;
         }
-        console.log(`[Client] Emitting START_GAME. Room: ${room.id}, Game: ${selectedGame}`);
-        socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame });
+        console.log(`[Client] Emitting START_GAME. Room: ${room.id}, Game: ${selectedGame}, Package: ${selectedPackageId}`);
+        socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId: selectedPackageId });
     };
 
     const renderLobby = () => (

@@ -1,16 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export interface WordPackage {
+export interface ContentPackage {
     id: string;
     name: string;
     description?: string;
     difficulty?: 'easy' | 'medium' | 'hard';
-    topics: string[];
+    topics?: string[];
+    prompts?: string[];
+    wordPairs?: Array<{ common: string; unique: string }>;
+    [key: string]: any; // Allow any additional properties
 }
 
 class PackageLoader {
-    private cache = new Map<string, WordPackage[]>();
+    private cache = new Map<string, ContentPackage[]>();
     private contentDir: string;
 
     constructor() {
@@ -21,14 +24,14 @@ class PackageLoader {
     /**
      * Loads all packages for a specific game
      */
-    loadPackages(game: string): WordPackage[] {
+    loadPackages(game: string): ContentPackage[] {
         // Return cached if available
         if (this.cache.has(game)) {
             return this.cache.get(game)!;
         }
 
         const gameDir = path.join(this.contentDir, game);
-        const packages: WordPackage[] = [];
+        const packages: ContentPackage[] = [];
 
         // Check if directory exists
         if (!fs.existsSync(gameDir)) {
@@ -44,7 +47,7 @@ class PackageLoader {
                 try {
                     const filePath = path.join(gameDir, file);
                     const content = fs.readFileSync(filePath, 'utf-8');
-                    const pkg = JSON.parse(content) as WordPackage;
+                    const pkg = JSON.parse(content) as ContentPackage;
                     packages.push(pkg);
                 } catch (error) {
                     console.error(`[PackageLoader] Error loading ${file}:`, error);

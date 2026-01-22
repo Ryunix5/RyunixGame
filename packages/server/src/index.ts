@@ -142,8 +142,8 @@ io.on('connection', (socket) => {
         io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
     });
 
-    socket.on(SocketEvents.START_GAME, (data: { roomId: string, gameId: string }) => {
-        console.log(`[Server] Received START_GAME. Room: ${data.roomId}, Game: ${data.gameId}`);
+    socket.on(SocketEvents.START_GAME, (data: { roomId: string, gameId: string, packageId?: string }) => {
+        console.log(`[Server] Received START_GAME. Room: ${data.roomId}, Game: ${data.gameId}, Package: ${data.packageId}`);
         const room = roomManager.getRoom(data.roomId);
         if (!room) {
             console.log('[Server] Room not found');

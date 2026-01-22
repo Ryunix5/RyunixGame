@@ -27,9 +27,6 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     const { room, socket } = useSocket();
     const { playSound } = useAudio();
     const [myAnswer, setMyAnswer] = useState('');
-    const [selectedPackages, setSelectedPackages] = useState<string[]>([
-        'general', 'pop-culture', 'geography', 'food'
-    ]);
     const [topicInput, setTopicInput] = useState('');
     const myId = socket?.id;
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -292,4 +289,5 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
         </div>
     );
 };
+
 

@@ -29,10 +29,13 @@ export class MindReaderGame implements GamePlugin {
         const scores: { [id: string]: number } = {};
         players.forEach(p => scores[p.id] = 0);
 
-        // Load prompts from JSON packages
-        const packages = packageLoader.loadPackages('mind-reader');
-        const prompts = packages.flatMap(p => (p as any).prompts || []);
-        const words = prompts.length > 0 ? prompts : DEFAULT_WORDS;
+        // Load from specific package if provided
+        const packageId = config?.packageId;
+        const words = packageId
+            ? packageLoader.getTopicsFromPackage(packageId)
+            : packageLoader.getAllTopics();
+
+        const finalWords = words.length > 0 ? words : DEFAULT_WORDS;
 
         return {
             type: 'mind-reader',
@@ -42,7 +45,7 @@ export class MindReaderGame implements GamePlugin {
             pairings: [],
             scores,
             guesses: {},
-            availableWords: words
+            availableWords: finalWords
         } as MindReaderState;
     }
 

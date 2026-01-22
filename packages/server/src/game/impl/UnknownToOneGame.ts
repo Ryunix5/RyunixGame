@@ -25,10 +25,11 @@ export class UnknownToOneGame implements GamePlugin {
         const initialPoints = players.length / 2;
         players.forEach(p => scores[p.id] = initialPoints);
 
-        // Load word pairs from JSON packages
-        const packages = packageLoader.loadPackages('unknown-to-one');
-        const wordPairs = packages.flatMap(p => (p as any).wordPairs || []);
-        const words = wordPairs.length > 0 ? wordPairs : [];
+        // Load from specific package if provided
+        const packageId = config?.packageId;
+        const words = packageId
+            ? packageLoader.getTopicsFromPackage(packageId)
+            : packageLoader.getAllTopics();
 
         return {
             type: 'unknown-to-one',

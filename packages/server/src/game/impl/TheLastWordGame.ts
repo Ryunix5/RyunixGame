@@ -29,7 +29,11 @@ export class TheLastWordGame implements GamePlugin {
     maxPlayers = 16;
 
     private getRandomTopic(state: TheLastWordState): string {
-        const packageIds = state.selectedPackages && state.selectedPackages.length > 0 ? state.selectedPackages : ['general', 'pop-culture', 'geography', 'food']; const topics = packageLoader.getTopicsFromPackages('last-word', packageIds);
+        // Get package ID from state or use all topics as fallback
+        const packageId = (state as any).packageId;
+        const topics = packageId
+            ? packageLoader.getTopicsFromPackage(packageId)
+            : packageLoader.getAllTopics();
 
         // Fallback to basic topics if no packages loaded
         if (topics.length === 0) {
@@ -37,7 +41,8 @@ export class TheLastWordGame implements GamePlugin {
             return fallback[Math.floor(Math.random() * fallback.length)];
         }
 
-        return topics[Math.floor(Math.random() * topics.length)];
+        return topics[Math.floor(Math.random() * topics.length)]
+            ;
     }
 
     private emitState?: (state: TheLastWordState) => void;

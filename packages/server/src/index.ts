@@ -115,6 +115,24 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Get available content packages
+    socket.on('getAvailablePackages', (callback) => {
+        try {
+            const packages = packageLoader.loadPackages();
+            const summary = packages.map(p => ({
+                id: p.id,
+                name: p.name,
+                description: p.description || '',
+                difficulty: p.difficulty || 'medium',
+                topicCount: p.topics?.length || 0
+            }));
+            callback(summary);
+        } catch (error) {
+            console.error('[getAvailablePackages] Error:', error);
+            callback([]);
+        }
+    });
+
     socket.on(SocketEvents.SELECT_GAME, (data: { roomId: string, gameId: string }) => {
         const room = roomManager.getRoom(data.roomId);
         if (!room) return;

@@ -1,5 +1,6 @@
 import { Player } from '@ryunix/shared';
 import { GamePlugin, GameState } from '../GamePlugin';
+import { packageLoader } from '../../services/PackageLoader';
 
 interface MindReaderState extends GameState {
     phase: 'SETUP' | 'PLAYING' | 'GAME_OVER';
@@ -28,18 +29,19 @@ export class MindReaderGame implements GamePlugin {
         const scores: { [id: string]: number } = {};
         players.forEach(p => scores[p.id] = 0);
 
-        const words = config?.words && Array.isArray(config.words) ? config.words : DEFAULT_WORDS;
+        // Load prompts from JSON packages
+        const packages = packageLoader.loadPackages('mind-reader');
+        const prompts = packages.flatMap(p => (p as any).prompts || []);
+        const words = prompts.length > 0 ? prompts : DEFAULT_WORDS;
 
         return {
             type: 'mind-reader',
             phase: 'SETUP',
             setupMode: 'AUTO',
-            words: {}, // Assigned in startRound
+            words: {},
             pairings: [],
             scores,
             guesses: {},
-            // Store available words in state or accessible somehow? 
-            // Better to store them in game state so startRound can access them.
             availableWords: words
         } as MindReaderState;
     }

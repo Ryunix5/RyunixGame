@@ -1,5 +1,6 @@
 import { Player } from '@ryunix/shared';
 import { GamePlugin, GameState } from '../GamePlugin';
+import { packageLoader } from '../../services/PackageLoader';
 
 interface UnknownToOneState extends GameState {
     round: number;
@@ -21,14 +22,16 @@ export class UnknownToOneGame implements GamePlugin {
 
     setup(players: Player[], config?: any): UnknownToOneState {
         const scores: { [id: string]: number } = {};
-        // "everyone starts with amount of points equal to number count divided by 2"
         const initialPoints = players.length / 2;
         players.forEach(p => scores[p.id] = initialPoints);
 
-        const words = config?.words && Array.isArray(config.words) ? config.words : [];
+        // Load word pairs from JSON packages
+        const packages = packageLoader.loadPackages('unknown-to-one');
+        const wordPairs = packages.flatMap(p => (p as any).wordPairs || []);
+        const words = wordPairs.length > 0 ? wordPairs : [];
 
         return {
-            type: 'unknown-to-one', // This string literal will match the client check
+            type: 'unknown-to-one',
             round: 1,
             phase: 'SETUP',
             scores,

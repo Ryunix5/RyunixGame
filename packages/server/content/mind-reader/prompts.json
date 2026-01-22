@@ -1,0 +1,28 @@
+{
+    "id": "standard",
+    "name": "Standard Prompts",
+    "description": "Classic mind reader prompts",
+    "difficulty": "medium",
+    "prompts": [
+        "Name a vacation destination",
+        "Name a type of pet",
+        "Name a pizza topping",
+        "Name a color",
+        "Name a movie genre",
+        "Name a fruit",
+        "Name a vehicle",
+        "Name a sport",
+        "Name a holiday",
+        "Name a musical instrument",
+        "Name a book genre",
+        "Name a TV show",
+        "Name a celebrity",
+        "Name a country",
+        "Name a city",
+        "Name a food",
+        "Name a drink",
+        "Name a game",
+        "Name an animal",
+        "Name a hobby"
+    ]
+}

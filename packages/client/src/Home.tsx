@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from './SocketContext';
 import { Button } from './components/ui/Button';
-import { ContentEditor } from './ContentEditor';
 
 export const Home: React.FC = () => {
     const { createRoom, joinRoom, listRooms, availableRooms, error } = useSocket();
     const [name, setName] = useState('');
     const [roomId, setRoomId] = useState('');
-    const [mode, setMode] = useState<'menu' | 'join' | 'create' | 'editor'>('menu');
+    const [mode, setMode] = useState<'menu' | 'join' | 'create'>('menu');
 
     // Load saved name from localStorage on mount
     useEffect(() => {
@@ -42,10 +41,6 @@ export const Home: React.FC = () => {
         if (!name || !targetId) return;
         joinRoom(targetId.toUpperCase(), name);
     };
-
-    if (mode === 'editor') {
-        return <ContentEditor onBack={() => setMode('menu')} />;
-    }
 
     return (
         <div className="flex flex-col items-center gap-12 w-full max-w-md p-8 md:p-12 relative">
@@ -82,15 +77,6 @@ export const Home: React.FC = () => {
                             onClick={() => setMode('join')}>
                             JOIN ROOM
                         </Button>
-                        <button
-                            onClick={() => {
-                                const pwd = window.prompt("Enter Admin Password:");
-                                if (pwd === "admin") setMode('editor');
-                                else if (pwd) alert("Incorrect Password");
-                            }}
-                            className="mt-4 text-xs font-bold text-slate-600 uppercase tracking-widest hover:text-slate-400 transition-colors">
-                            Manage Content
-                        </button>
                     </div>
                 )}
 

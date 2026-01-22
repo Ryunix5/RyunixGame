@@ -1,0 +1,68 @@
+{
+    "id": "standard",
+    "name": "Standard Words",
+    "description": "Classic word pairs for Unknown to One",
+    "difficulty": "medium",
+    "wordPairs": [
+        {
+            "common": "Dog",
+            "unique": "Cat"
+        },
+        {
+            "common": "Apple",
+            "unique": "Orange"
+        },
+        {
+            "common": "Car",
+            "unique": "Truck"
+        },
+        {
+            "common": "Coffee",
+            "unique": "Tea"
+        },
+        {
+            "common": "Pizza",
+            "unique": "Burger"
+        },
+        {
+            "common": "Summer",
+            "unique": "Winter"
+        },
+        {
+            "common": "Beach",
+            "unique": "Mountain"
+        },
+        {
+            "common": "Movie",
+            "unique": "Book"
+        },
+        {
+            "common": "Guitar",
+            "unique": "Piano"
+        },
+        {
+            "common": "Soccer",
+            "unique": "Basketball"
+        },
+        {
+            "common": "Paris",
+            "unique": "London"
+        },
+        {
+            "common": "Red",
+            "unique": "Blue"
+        },
+        {
+            "common": "Chocolate",
+            "unique": "Vanilla"
+        },
+        {
+            "common": "Morning",
+            "unique": "Evening"
+        },
+        {
+            "common": "Rain",
+            "unique": "Snow"
+        }
+    ]
+}

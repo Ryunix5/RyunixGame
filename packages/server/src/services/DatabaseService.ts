@@ -41,9 +41,8 @@ export class DatabaseService {
      */
     private initialize(): void {
         try {
-            // In production (compiled), __dirname is dist/services, schema is at dist/db/schema.sql
-            const schemaPath = path.join(__dirname, '..', 'db', 'schema.sql');
-            const schema = fs.readFileSync(schemaPath, 'utf-8');
+            // Inline schema to avoid file deployment issues
+            const schema = `CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, player_id TEXT NOT NULL, player_name TEXT NOT NULL, socket_id TEXT, room_id TEXT, created_at INTEGER NOT NULL, last_seen INTEGER NOT NULL, expires_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS idx_sessions_player_id ON sessions(player_id); CREATE INDEX IF NOT EXISTS idx_sessions_room_id ON sessions(room_id); CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at); CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, host_id TEXT NOT NULL, status TEXT NOT NULL, max_players INTEGER NOT NULL DEFAULT 8, selected_game_id TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, game_state TEXT); CREATE INDEX IF NOT EXISTS idx_rooms_status ON rooms(status); CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at); CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, room_id TEXT NOT NULL, player_id TEXT NOT NULL, player_name TEXT NOT NULL, socket_id TEXT, is_host INTEGER NOT NULL DEFAULT 0, is_alive INTEGER NOT NULL DEFAULT 1, score INTEGER NOT NULL DEFAULT 0, room_wins INTEGER NOT NULL DEFAULT 0, joined_at INTEGER NOT NULL, FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE); CREATE INDEX IF NOT EXISTS idx_players_room_id ON players(room_id); CREATE INDEX IF NOT EXISTS idx_players_player_id ON players(player_id); CREATE INDEX IF NOT EXISTS idx_players_socket_id ON players(socket_id); CREATE TABLE IF NOT EXISTS player_stats (player_id TEXT PRIMARY KEY, total_games_played INTEGER NOT NULL DEFAULT 0, total_wins INTEGER NOT NULL DEFAULT 0, total_score INTEGER NOT NULL DEFAULT 0, first_seen INTEGER NOT NULL, last_seen INTEGER NOT  NULL);`;
 
             // Execute schema (create tables if not exist)
             this.db.exec(schema);

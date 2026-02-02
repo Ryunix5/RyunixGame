@@ -8,13 +8,17 @@ import { RoomView } from './RoomView';
 import { AnimatedPage } from './components/AnimatedPage';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { AudioControl } from './components/AudioControl';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
+import { ReconnectionBanner } from './components/ReconnectionBanner';
 
 const AppContent: React.FC = () => {
-    const { room } = useSocket();
+    const { room, connectionStatus } = useSocket();
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative">
             <AnimatedBackground />
             <AudioControl />
+            <ReconnectionBanner status={connectionStatus} />
             <div className="min-h-screen flex items-center justify-center relative" style={{ zIndex: 1 }}>
                 <AnimatePresence mode="wait">
                     {!room ? (
@@ -34,13 +38,17 @@ const AppContent: React.FC = () => {
 
 function App() {
     return (
-        <SocketProvider>
-            <VoiceProvider>
-                <AudioProvider>
-                    <AppContent />
-                </AudioProvider>
-            </VoiceProvider>
-        </SocketProvider>
+        <ErrorBoundary>
+            <ToastProvider>
+                <SocketProvider>
+                    <VoiceProvider>
+                        <AudioProvider>
+                            <AppContent />
+                        </AudioProvider>
+                    </VoiceProvider>
+                </SocketProvider>
+            </ToastProvider>
+        </ErrorBoundary>
     );
 }
 

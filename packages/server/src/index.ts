@@ -3,18 +3,31 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
 import { SocketEvents, RoomStatus } from '@ryunix/shared';
+import { SERVER_CONFIG } from './constants';
+import { logger } from './utils/logger';
+import { validatePlayerName, validateRoomCode, validateChatMessage, ValidationError } from './utils/validation';
+import { handleGameCompletion } from './game/gameUtils';
+import { databaseService } from './services/DatabaseService';
+import { apiLimiter } from './middleware/rateLimiter';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+
+// CORS configuration - use environment variable in production
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['*'];
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", // Allow all for dev
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
     }
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : SERVER_CONFIG.PORT;
 
 import { RoomManager } from './RoomManager';
 import { GameRegistry } from './game/GameRegistry';
@@ -33,12 +46,14 @@ const roomManager = new RoomManager();
 const gameRegistry = new GameRegistry();
 const contentManager = new ContentManager();
 
+// Apply rate limiting to API routes
+app.use('/api/', apiLimiter);
 app.use(express.json());
 
 // Serve static frontend files
 const clientDist = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(clientDist)) {
-    console.log('Serving static files from:', clientDist);
+    logger.info('Serving static files from:', { path: clientDist });
     app.use(express.static(clientDist));
 
     // Handle SPA routing (return index.html for non-API requests)
@@ -47,7 +62,7 @@ if (fs.existsSync(clientDist)) {
         res.sendFile(path.join(clientDist, 'index.html'));
     });
 } else {
-    console.log('Client build not found at:', clientDist);
+    logger.warn('Client build not found', { path: clientDist });
 }
 
 app.get('/api/content/:gameType', (req, res) => {
@@ -77,40 +92,147 @@ gameRegistry.register(new PrisonersLetterGame());
 gameRegistry.register(new UnknownToOneGame());
 gameRegistry.register(new MindReaderGame());
 
+// Cleanup expired sessions on startup and periodically
+databaseService.cleanupExpiredSessions();
+setInterval(() => {
+    const cleaned = databaseService.cleanupExpiredSessions();
+    if (cleaned > 0) {
+        logger.info('Cleaned up expired sessions', { count: cleaned });
+    }
+}, 60 * 60 * 1000); // Every hour
+
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    logger.info('Client connected', { socketId: socket.id });
 
     // DEBUG: Trace all events
     socket.onAny((eventName, ...args) => {
-        console.log(`[Server RAW] Received event: ${eventName}`, args);
+        logger.debug('Event received', { event: eventName, socketId: socket.id });
     });
 
     socket.on(SocketEvents.CREATE_ROOM, (data: { hostName: string }) => {
-        const room = roomManager.createRoom(socket.id, data.hostName, socket.id);
-        socket.join(room.id);
-        socket.emit(SocketEvents.ROOM_UPDATED, room);
-        console.log(`Room created: ${room.id} by ${data.hostName}`);
+        try {
+            const validName = validatePlayerName(data.hostName);
+            const room = roomManager.createRoom(socket.id, validName, socket.id);
+            socket.join(room.id);
+            socket.emit(SocketEvents.ROOM_UPDATED, room);
+
+            // Persist room to database
+            databaseService.saveRoom(room);
+
+            logger.info('Room created', { roomId: room.id, hostName: validName });
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                socket.emit(SocketEvents.ERROR, { message: error.message });
+            } else {
+                logger.error('Failed to create room', error);
+                socket.emit(SocketEvents.ERROR, { message: 'Failed to create room' });
+            }
+        }
+    });
+
+    // Handle reconnection
+    socket.on(SocketEvents.RECONNECT, (data: { sessionToken: string, roomId?: string, playerId?: string }) => {
+        try {
+            logger.info('Reconnection attempt', { sessionToken: data.sessionToken, roomId: data.roomId, playerId: data.playerId });
+
+            // Validate session token
+            const session = databaseService.getSession(data.sessionToken);
+            if (!session) {
+                logger.warn('Invalid session token', { sessionToken: data.sessionToken });
+                socket.emit(SocketEvents.ERROR, { message: 'Invalid or expired session' });
+                return;
+            }
+
+            // Find room by player ID if not provided
+            let roomId = data.roomId;
+            if (!roomId && session.player_id) {
+                roomId = databaseService.getRoomByPlayerId(session.player_id) || undefined;
+            }
+
+            if (!roomId) {
+                logger.info('No active room found for session', { sessionToken: data.sessionToken });
+                socket.emit(SocketEvents.ERROR, { message: 'No active room found' });
+                return;
+            }
+
+            // Load room from database
+            const room = databaseService.getRoom(roomId);
+            if (!room) {
+                logger.warn('Room not found', { roomId });
+                socket.emit(SocketEvents.ERROR, { message: 'Room no longer exists' });
+                return;
+            }
+
+            // Find player in room
+            const existingPlayer = room.players.find(p => p.id === session.player_id);
+            if (!existingPlayer) {
+                logger.warn('Player not in room', { playerId: session.player_id, roomId });
+                socket.emit(SocketEvents.ERROR, { message: 'Player not found in room' });
+                return;
+            }
+
+            // Update player's socket ID
+            existingPlayer.socketId = socket.id;
+            databaseService.updatePlayerSocket(roomId, session.player_id, socket.id);
+            databaseService.updateSession(data.sessionToken, socket.id, roomId);
+
+            // Rejoin socket room
+            socket.join(roomId);
+
+            // Notify player of successful reconnection
+            socket.emit(SocketEvents.RECONNECTED, room);
+
+            // Notify other players in room
+            io.to(roomId).emit(SocketEvents.ROOM_UPDATED, room);
+
+            logger.info('Player reconnected successfully', { playerId: session.player_id, roomId, playerName: session.player_name });
+        } catch (error) {
+            logger.error('Reconnection failed', error);
+            socket.emit(SocketEvents.ERROR, { message: 'Reconnection failed' });
+        }
     });
 
     socket.on(SocketEvents.JOIN_ROOM, (data: { roomId: string, playerName: string }) => {
-        const room = roomManager.joinRoom(data.roomId, socket.id, data.playerName, socket.id);
-        if (room) {
-            socket.join(room.id);
-            io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
-            console.log(`${data.playerName} joined room ${room.id}`);
-        } else {
-            socket.emit(SocketEvents.ERROR, { message: 'Failed to join room' });
+        try {
+            const validName = validatePlayerName(data.playerName);
+            const validRoomId = validateRoomCode(data.roomId);
+
+            const room = roomManager.joinRoom(validRoomId, socket.id, validName, socket.id);
+            if (room) {
+                socket.join(room.id);
+                io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+
+                // Persist updated room to database
+                databaseService.saveRoom(room);
+
+                logger.info('Player joined room', { roomId: room.id, playerName: validName });
+            } else {
+                socket.emit(SocketEvents.ERROR, { message: 'Room not found or is full' });
+            }
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                socket.emit(SocketEvents.ERROR, { message: error.message });
+            } else {
+                logger.error('Failed to join room', error);
+                socket.emit(SocketEvents.ERROR, { message: 'Failed to join room' });
+            }
         }
     });
 
     socket.on(SocketEvents.LEAVE_ROOM, () => {
-        // Find room where this socket is
-        // Since we don't pass roomId in LEAVE_ROOM event usually (context knows), 
-        // or we have to iterate. RoomManager.onDisconnect logic is similar but for leaving.
         const updatedRoom = roomManager.onDisconnect(socket.id);
         if (updatedRoom) {
             io.to(updatedRoom.id).emit(SocketEvents.ROOM_UPDATED, updatedRoom);
-            console.log(`Socket ${socket.id} left room ${updatedRoom.id}`);
+
+            // Update database
+            if (updatedRoom.players.length > 0) {
+                databaseService.saveRoom(updatedRoom);
+            } else {
+                // Room is empty, delete it
+                databaseService.deleteRoom(updatedRoom.id);
+            }
+
+            logger.info('Player left room', { socketId: socket.id, roomId: updatedRoom.id });
             socket.leave(updatedRoom.id);
         }
     });
@@ -260,21 +382,9 @@ io.on('connection', (socket) => {
                             roomRef.status = RoomStatus.RESULTS;
                             roomRef.gameState = { ...roomRef.gameState, results };
 
-                            // Find winner (highest score)
-                            let maxScore = -1;
-                            let winnerId: string | null = null;
-                            Object.entries(results).forEach(([pid, score]) => {
-                                if (score > maxScore) {
-                                    maxScore = score;
-                                    winnerId = pid;
-                                }
-                            });
-
-                            // Increment roomWins for the winner
-                            if (winnerId) {
-                                const winner = roomRef.players.find(p => p.id === winnerId);
-                                if (winner) winner.roomWins++;
-                            }
+                            // Handle game completion and winner calculation
+                            const { players: updatedPlayers, winnerId } = handleGameCompletion(results, roomRef.players);
+                            roomRef.players = updatedPlayers;
 
                             io.to(roomRef.id).emit(SocketEvents.ROOM_UPDATED, roomRef);
                         }
@@ -287,21 +397,11 @@ io.on('connection', (socket) => {
                 room.status = RoomStatus.RESULTS;
                 room.gameState = { ...room.gameState, results };
 
-                // Find winner (highest score)
-                let maxScore = -1;
-                let winnerId: string | null = null;
-                Object.entries(results).forEach(([pid, score]) => {
-                    if (score > maxScore) {
-                        maxScore = score;
-                        winnerId = pid;
-                    }
-                });
+                // Handle game completion and winner calculation
+                const { players: updatedPlayers, winnerId } = handleGameCompletion(results, room.players);
+                room.players = updatedPlayers;
 
-                // Increment roomWins for the winner
-                if (winnerId) {
-                    const winner = room.players.find(p => p.id === winnerId);
-                    if (winner) winner.roomWins++;
-                }
+                logger.info('Game completed', { roomId: room.id, winnerId });
 
                 io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
             }
@@ -330,21 +430,30 @@ io.on('connection', (socket) => {
     });
 
     socket.on(SocketEvents.SEND_CHAT, (data: { roomId: string, message: string }) => {
-        const room = roomManager.getRoom(data.roomId);
-        if (!room) return;
+        try {
+            const room = roomManager.getRoom(data.roomId);
+            if (!room) return;
 
-        const player = room.players.find(p => p.id === socket.id);
-        if (!player) return;
+            const player = room.players.find(p => p.id === socket.id);
+            if (!player) return;
 
-        const chatMessage = {
-            id: Date.now().toString(),
-            senderId: player.id,
-            senderName: player.name,
-            content: data.message,
-            timestamp: Date.now()
-        };
+            // Validate and sanitize message
+            const validMessage = validateChatMessage(data.message);
 
-        io.to(room.id).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+            const chatMessage = {
+                id: Date.now().toString(),
+                senderId: player.id,
+                senderName: player.name,
+                content: validMessage,
+                timestamp: Date.now()
+            };
+
+            io.to(room.id).emit(SocketEvents.CHAT_MESSAGE, chatMessage);
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                socket.emit(SocketEvents.ERROR, { message: error.message });
+            }
+        }
     });
 
     socket.on('voice_signal', (data: { to: string, signal: any }) => {
@@ -355,14 +464,42 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
+        logger.info('Client disconnected', { socketId: socket.id });
+
+        // Clear session socket
+        databaseService.clearSessionSocket(socket.id);
+
         const updatedRoom = roomManager.onDisconnect(socket.id);
         if (updatedRoom) {
             io.to(updatedRoom.id).emit(SocketEvents.ROOM_UPDATED, updatedRoom);
+
+            // Update or delete room in database
+            if (updatedRoom.players.length > 0) {
+                databaseService.saveRoom(updatedRoom);
+            } else {
+                databaseService.deleteRoom(updatedRoom.id);
+            }
         }
     });
 });
 
 httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info('Server started', { port: PORT, environment: process.env.NODE_ENV || 'development' });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM received, closing server gracefully');
+    httpServer.close(() => {
+        databaseService.close();
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    logger.info('SIGINT received, closing server gracefully');
+    httpServer.close(() => {
+        databaseService.close();
+        process.exit(0);
+    });
 });

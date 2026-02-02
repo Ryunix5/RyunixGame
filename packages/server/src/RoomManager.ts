@@ -1,11 +1,12 @@
 import { Room, RoomStatus, Player, SocketEvents } from '@ryunix/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { ROOM_CONFIG } from './constants';
 
 export class RoomManager {
     private rooms: Map<string, Room> = new Map();
 
     createRoom(hostId: string, hostName: string, hostSocketId: string): Room {
-        const roomId = uuidv4().slice(0, 6).toUpperCase(); // Short ID for easier joining
+        const roomId = uuidv4().slice(0, ROOM_CONFIG.ROOM_CODE_LENGTH).toUpperCase();
         const host: Player = {
             id: hostId,
             name: hostName,
@@ -22,7 +23,7 @@ export class RoomManager {
             hostId: hostId,
             players: [host],
             status: RoomStatus.LOBBY,
-            maxPlayers: 8
+            maxPlayers: ROOM_CONFIG.MAX_PLAYERS
         };
 
         this.rooms.set(roomId, newRoom);

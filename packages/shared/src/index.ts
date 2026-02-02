@@ -38,13 +38,21 @@ export enum SocketEvents {
     RESET_LOBBY = 'reset_lobby',
     SEND_CHAT = 'send_chat',
     SELECT_GAME = 'select_game',
+    RECONNECT = 'reconnect', // New: reconnection event
 
     // Server -> Client
     ROOM_UPDATED = 'room_updated',
     ERROR = 'error',
     GAME_STATE = 'game_state',
     CHAT_MESSAGE = 'chat_message',
-    ROOM_LIST = 'room_list'
+    ROOM_LIST = 'room_list',
+    RECONNECTED = 'reconnected' // New: successful reconnection
+}
+
+export interface ReconnectData {
+    sessionToken: string;
+    roomId?: string;
+    playerId?: string;
 }
 
 export interface RoomSummary {

@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { SocketEvents, Room } from '@ryunix/shared';
-
+import { SocketEvents, Room, ReconnectData } from '@ryunix/shared';
 import { RoomSummary } from '@ryunix/shared';
+import { reconnectionManager } from './services/ReconnectionManager';
 
 interface SocketContextType {
     socket: Socket | null;
     isConnected: boolean;
+    connectionStatus: 'connected' | 'reconnecting' | 'disconnected';
     createRoom: (hostName: string, gameId?: string) => void;
     joinRoom: (roomId: string, playerName: string) => void;
     leaveRoom: () => void;
@@ -31,29 +32,73 @@ export const useSocket = () => {
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'reconnecting' | 'disconnected'>('disconnected');
     const [room, setRoom] = useState<Room | null>(null);
     const [availableRooms, setAvailableRooms] = useState<RoomSummary[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
     useEffect(() => {
-        // Auto-detects URL. In dev (Vite), it needs explicit URL if ports differ.
-        // In prod (served by same node server), it defaults to window.location.
-        const serverUrl = (import.meta as any).env.PROD ? '/' : 'http://localhost:3001';
+        const serverUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
 
-        const newSocket = io(serverUrl);
+        const newSocket = io(serverUrl, {
+            auth: {
+                sessionToken: reconnectionManager.getSessionToken()
+            },
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
+            console.log('[SocketContext] Connected to server');
             setIsConnected(true);
+            setConnectionStatus('connected');
+            setReconnectAttempts(0);
+
+            // Attempt to reconnect to previous room if available
+            const roomState = reconnectionManager.getRoomState();
+            if (roomState) {
+                console.log('[SocketContext] Attempting to reconnect to room:', roomState.roomId);
+                const reconnectData: ReconnectData = {
+                    sessionToken: reconnectionManager.getSessionToken(),
+                    roomId: roomState.roomId,
+                    playerId: roomState.playerId
+                };
+                newSocket.emit(SocketEvents.RECONNECT, reconnectData);
+            }
         });
 
         newSocket.on('disconnect', () => {
+            console.log('[SocketContext] Disconnected from server');
             setIsConnected(false);
+            setConnectionStatus('disconnected');
+        });
+
+        newSocket.on('reconnect_attempt', (attempt: number) => {
+            console.log('[SocketContext] Reconnection attempt:', attempt);
+            setConnectionStatus('reconnecting');
+            setReconnectAttempts(attempt);
+        });
+
+        newSocket.on(SocketEvents.RECONNECTED, (updatedRoom: Room) => {
+            console.log('[SocketContext] Successfully reconnected to room:', updatedRoom.id);
+            setRoom(updatedRoom);
+            setConnectionStatus('connected');
+            setError(null);
         });
 
         newSocket.on(SocketEvents.ROOM_UPDATED, (updatedRoom: Room) => {
             setRoom(updatedRoom);
             setError(null);
+
+            // Save room state for reconnection
+            if (updatedRoom && newSocket.id) {
+                const player = updatedRoom.players.find(p => p.socketId === newSocket.id);
+                if (player) {
+                    reconnectionManager.saveRoomState(updatedRoom.id, player.id, player.name);
+                }
+            }
         });
 
         newSocket.on(SocketEvents.ROOM_LIST, (rooms: RoomSummary[]) => {
@@ -62,6 +107,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         newSocket.on(SocketEvents.ERROR, (err: { message: string }) => {
             setError(err.message);
+
+            // Clear room state if reconnection failed
+            if (err.message.includes('reconnect')) {
+                reconnectionManager.clearRoomState();
+            }
         });
 
         return () => {
@@ -93,6 +143,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setRoom(null);
         if (socket) {
             socket.emit(SocketEvents.LEAVE_ROOM);
+            // Clear room state from reconnection manager
+            reconnectionManager.clearRoomState();
             // Also refresh list if we leave to menu
             listRooms();
         }
@@ -111,7 +163,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
+        <SocketContext.Provider value={{ socket, isConnected, connectionStatus, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
             {children}
         </SocketContext.Provider>
     );

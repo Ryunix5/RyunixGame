@@ -8,6 +8,7 @@ interface SocketContextType {
     socket: Socket | null;
     isConnected: boolean;
     connectionStatus: 'connected' | 'reconnecting' | 'disconnected';
+    reconnectAttempts: number;
     createRoom: (hostName: string, gameId?: string) => void;
     joinRoom: (roomId: string, playerName: string) => void;
     leaveRoom: () => void;
@@ -163,7 +164,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected, connectionStatus, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
+        <SocketContext.Provider value={{ socket, isConnected, connectionStatus, reconnectAttempts, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
             {children}
         </SocketContext.Provider>
     );

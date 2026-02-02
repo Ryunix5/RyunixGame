@@ -13,12 +13,12 @@ import { ToastProvider } from './components/Toast';
 import { ReconnectionBanner } from './components/ReconnectionBanner';
 
 const AppContent: React.FC = () => {
-    const { room, connectionStatus } = useSocket();
+    const { room, connectionStatus, reconnectAttempts } = useSocket();
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative">
             <AnimatedBackground />
             <AudioControl />
-            <ReconnectionBanner status={connectionStatus} />
+            <ReconnectionBanner status={connectionStatus} retryCount={reconnectAttempts} />
             <div className="min-h-screen flex items-center justify-center relative" style={{ zIndex: 1 }}>
                 <AnimatePresence mode="wait">
                     {!room ? (

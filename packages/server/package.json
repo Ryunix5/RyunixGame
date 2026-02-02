@@ -6,7 +6,7 @@
         "dev": "nodemon src/index.ts",
         "prebuild": "npm run build --prefix ../shared",
         "build": "tsc",
-        "postbuild": "copyfiles -u 1 content/**/* dist && copyfiles -u 1 src/db/**/* dist/db",
+        "postbuild": "copyfiles -u 1 content/**/* dist && copyfiles -u 2 src/db/**/* dist",
         "start": "node dist/index.js",
         "test": "jest",
         "test:watch": "jest --watch",

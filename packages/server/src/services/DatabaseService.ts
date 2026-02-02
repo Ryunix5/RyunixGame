@@ -41,7 +41,8 @@ export class DatabaseService {
      */
     private initialize(): void {
         try {
-            const schemaPath = path.join(__dirname, 'schema.sql');
+            // In production (compiled), __dirname is dist/services, schema is at dist/db/schema.sql
+            const schemaPath = path.join(__dirname, '..', 'db', 'schema.sql');
             const schema = fs.readFileSync(schemaPath, 'utf-8');
 
             // Execute schema (create tables if not exist)

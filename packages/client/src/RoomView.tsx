@@ -8,6 +8,7 @@ import { BlindShapesGame } from './BlindShapesGame';
 import { PrisonersLetterGame } from './PrisonersLetterGame';
 import { UnknownToOneGame } from './UnknownToOneGame';
 import { MindReaderGame } from './MindReaderGame';
+import { MatchingMindsGame } from './MatchingMindsGame';
 import { ResultsView } from './ResultsView';
 import { Leaderboard } from './Leaderboard';
 import { Button } from './components/ui/Button';
@@ -19,6 +20,7 @@ import { PackageSelector } from './components/PackageSelector';
 const GAMES = [
     { id: 'split-steal', name: 'Split or Steal', desc: 'Trust and betrayal.', players: '2' },
     { id: 'mind-reader', name: 'Mind Reader', desc: 'Guess the secret word.', players: '2' },
+    { id: 'matching-minds', name: 'Matching Minds', desc: 'Sync your thinking!', players: '2-8' },
     { id: 'the-last-word', name: 'The Last Word', desc: 'Word chain game.', players: '2-10' },
     { id: 'deceiving-cards', name: 'Deceiving Cards', desc: 'Find the odd one out.', players: '3-8' },
     { id: 'prisoners-letter', name: 'Prisoners\' Letter', desc: 'Collaborative writing.', players: '2-6' },
@@ -219,10 +221,11 @@ export const RoomView: React.FC = () => {
                 {room.gameState?.type === 'prisoners-letter' && <PrisonersLetterGame gameState={room.gameState as any} />}
                 {room.gameState?.type === 'unknown-to-one' && <UnknownToOneGame gameState={room.gameState as any} />}
                 {room.gameState?.type === 'mind-reader' && <MindReaderGame gameState={room.gameState as any} />}
+                {room.gameState?.type === 'matching-minds' && <MatchingMindsGame gameState={room.gameState as any} />}
 
                 {![
                     'split-steal', 'the-last-word', 'deceiving-cards',
-                    'prisoners-letter', 'unknown-to-one', 'mind-reader'
+                    'prisoners-letter', 'unknown-to-one', 'mind-reader', 'matching-minds'
                 ].includes(room.gameState?.type || '') && (
                         <div className="text-center p-12 border border-red-900 bg-red-900/10 rounded">
                             <h2 className="text-xl font-bold text-red-500 mb-2">ERROR</h2>

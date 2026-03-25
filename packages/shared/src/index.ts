@@ -55,6 +55,27 @@ export interface ReconnectData {
     playerId?: string;
 }
 
+// ==================== MATCHING MINDS GAME ====================
+
+export interface MatchingMindsState {
+    phase: 'SUBMITTING' | 'REVEALING' | 'RESULTS';
+    promptWord: string;
+    currentRound: number;
+    maxRounds: number;
+    rounds: MatchingMindsRound[];
+    submissions: Record<string, string>;
+    hasConverged: boolean;
+    convergenceWord?: string;
+}
+
+export interface MatchingMindsRound {
+    roundNumber: number;
+    promptWord: string;
+    submissions: Array<{ playerId: string; playerName: string; word: string }>;
+    matchCount: number;
+    mostCommonWord?: string;
+}
+
 export interface RoomSummary {
     id: string;
     hostName: string;

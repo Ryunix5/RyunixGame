@@ -18,12 +18,17 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// CORS configuration - use environment variable in production
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['*'];
+// CORS configuration - allow development origins
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
+// Always allow localhost:3000 and localhost:5173 in development
+if (process.env.NODE_ENV === 'development') {
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:5173');
+}
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST"]
+        origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -41,6 +46,7 @@ import { BlindShapesGame } from './game/impl/BlindShapesGame';
 import { PrisonersLetterGame } from './game/impl/PrisonersLetterGame';
 import { UnknownToOneGame } from './game/impl/UnknownToOneGame';
 import { MindReaderGame } from './game/impl/MindReaderGame';
+import { MatchingMindsGame } from './game/impl/MatchingMindsGame';
 
 const roomManager = new RoomManager();
 const gameRegistry = new GameRegistry();
@@ -91,6 +97,7 @@ gameRegistry.register(new BlindShapesGame());
 gameRegistry.register(new PrisonersLetterGame());
 gameRegistry.register(new UnknownToOneGame());
 gameRegistry.register(new MindReaderGame());
+gameRegistry.register(new MatchingMindsGame());
 
 // Cleanup expired sessions on startup and periodically
 databaseService.cleanupExpiredSessions();

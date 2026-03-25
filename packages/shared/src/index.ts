@@ -59,7 +59,6 @@ export interface ReconnectData {
 
 export interface MatchingMindsState {
     phase: 'SUBMITTING' | 'REVEALING' | 'RESULTS';
-    promptWord: string;
     currentRound: number;
     maxRounds: number;
     rounds: MatchingMindsRound[];
@@ -70,7 +69,6 @@ export interface MatchingMindsState {
 
 export interface MatchingMindsRound {
     roundNumber: number;
-    promptWord: string;
     submissions: Array<{ playerId: string; playerName: string; word: string }>;
     matchCount: number;
     mostCommonWord?: string;

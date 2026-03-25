@@ -1,7 +1,6 @@
 import { GamePlugin, GameState } from '../GamePlugin';
 import { Player, MatchingMindsState, MatchingMindsRound } from '@ryunix/shared';
 import { logger } from '../../utils/logger';
-import { packageLoader } from '../../services/PackageLoader';
 
 /**
  * Matching Minds Game
@@ -13,42 +12,12 @@ export class MatchingMindsGame implements GamePlugin {
     minPlayers = 2;
     maxPlayers = 8;
 
-    private getPromptWords(packageId?: string): string[] {
-        // Get words from selected package
-        const topics = packageId
-            ? packageLoader.getTopicsFromPackage(packageId)
-            : packageLoader.getAllTopics();
-
-        // Fallback to basic words if no packages loaded
-        if (topics.length === 0) {
-            return [
-                // Objects
-                'dirt', 'water', 'fire', 'book', 'phone', 'car', 'tree', 'money',
-                // Emotions
-                'happy', 'angry', 'love', 'fear', 'hope', 'sad', 'excited',
-                // Places
-                'home', 'beach', 'mountain', 'city', 'space', 'school', 'park',
-                // Abstract
-                'time', 'power', 'freedom', 'truth', 'future', 'dream', 'danger',
-                // Food
-                'pizza', 'apple', 'bread', 'cheese', 'chocolate', 'coffee'
-            ];
-        }
-
-        return topics;
-    }
-
     setup(players: Player[], config?: any, emitState?: (state: GameState) => void): GameState {
-        const packageId = config?.packageId;
-        const words = this.getPromptWords(packageId);
-        const promptWord = words[Math.floor(Math.random() * words.length)];
-
-        logger.info('Setting up Matching Minds', { promptWord, playerCount: players.length, packageId });
+        logger.info('Setting up Matching Minds', { playerCount: players.length });
 
         const state: MatchingMindsState & GameState = {
             type: 'matching-minds',
             phase: 'SUBMITTING',
-            promptWord,
             currentRound: 1,
             maxRounds: 15,
             rounds: [],
@@ -132,7 +101,6 @@ export class MatchingMindsGame implements GamePlugin {
         // Save round results
         const round: MatchingMindsRound = {
             roundNumber: state.currentRound,
-            promptWord: state.promptWord,
             submissions: playerSubmissions,
             mostCommonWord,
             matchCount

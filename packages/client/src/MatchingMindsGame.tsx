@@ -43,8 +43,11 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
             <div className="flex flex-col items-center w-full bg-gray-900 p-8 rounded-xl border border-gray-700 min-h-[500px]">
                 <div className="text-center mb-8">
                     <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-2">Round {gameState.currentRound}</h2>
-                    <p className="text-gray-400 mb-4">What comes to mind when you think of...</p>
-                    <h1 className="text-5xl font-black text-cyan-400 animate-pulse">{gameState.promptWord}</h1>
+                    <p className="text-gray-400 text-lg">
+                        {gameState.currentRound === 1 
+                            ? 'Enter any word to start syncing minds!' 
+                            : 'Try to match what the others said!'}
+                    </p>
                 </div>
 
                 <div className="w-full max-w-md mb-6">

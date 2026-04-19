@@ -11,6 +11,7 @@ import { AudioControl } from './components/AudioControl';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import { ReconnectionBanner } from './components/ReconnectionBanner';
+import { LoadingOverlay } from './components/LoadingOverlay';
 
 const AppContent: React.FC = () => {
     const { room, connectionStatus, reconnectAttempts } = useSocket();
@@ -19,6 +20,11 @@ const AppContent: React.FC = () => {
             <AnimatedBackground />
             <AudioControl />
             <ReconnectionBanner status={connectionStatus} retryCount={reconnectAttempts} />
+            
+            <AnimatePresence>
+                {connectionStatus !== 'connected' && <LoadingOverlay />}
+            </AnimatePresence>
+
             <div className="min-h-screen flex items-center justify-center relative" style={{ zIndex: 1 }}>
                 <AnimatePresence mode="wait">
                     {!room ? (

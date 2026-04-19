@@ -156,6 +156,11 @@ export class MatchingMindsGame implements GamePlugin {
             });
         });
 
+        // Ensure no score exceeds 100.
+        Object.keys(scores).forEach(id => {
+            scores[id] = Math.min(scores[id], 100);
+        });
+
         return scores;
     }
 }

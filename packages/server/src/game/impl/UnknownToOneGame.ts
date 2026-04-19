@@ -208,6 +208,11 @@ export class UnknownToOneGame implements GamePlugin {
     }
 
     resolve(state: UnknownToOneState, players: Player[]): { [playerId: string]: number } {
-        return state.scores;
+        // Normalize 10 default points win-condition to 100 scale
+        const normalizedScores: { [id: string]: number } = {};
+        Object.keys(state.scores).forEach(id => {
+            normalizedScores[id] = Math.min(state.scores[id] * 10, 100);
+        });
+        return normalizedScores;
     }
 }

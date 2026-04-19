@@ -12,7 +12,6 @@ import { MatchingMindsGame } from './MatchingMindsGame';
 import { ResultsView } from './ResultsView';
 import { Leaderboard } from './Leaderboard';
 import { Button } from './components/ui/Button';
-import { Card } from './components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from './VoiceContext';
 import { PackageSelector } from './components/PackageSelector';
@@ -32,19 +31,19 @@ const VoiceControls: React.FC = () => {
 
     if (!joined) {
         return (
-            <Button size="sm" variant="secondary" onClick={joinVoice}>
-                🎤 JOIN VOICE
+            <Button size="lg" className="pixel-btn px-6 text-xl" onClick={joinVoice}>
+                &gt; JOIN VOICE_CHAT
             </Button>
         );
     }
 
     return (
-        <div className="flex gap-2">
-            <Button size="sm" variant={isMuted ? 'danger' : 'primary'} onClick={toggleMute}>
-                {isMuted ? '🔇 UNMUTE' : '🎙️ MUTE'}
+        <div className="flex gap-4">
+            <Button size="lg" className="pixel-btn px-6 text-xl" onClick={toggleMute}>
+                {isMuted ? 'UNMUTE_MIC' : 'MUTE_MIC'}
             </Button>
-            <Button size="sm" variant="danger" onClick={leaveVoice}>
-                LEAVE VOICE
+            <Button size="lg" className="pixel-btn px-6 text-xl bg-red-900 border-red-500" onClick={leaveVoice}>
+                DISCONNECT_VOICE
             </Button>
         </div>
     );
@@ -101,71 +100,74 @@ export const RoomView: React.FC = () => {
 
     const renderLobby = () => (
         <div className="w-full max-w-screen-2xl mx-auto p-8 ani-fade-in flex flex-col gap-12">
-            {/* Minimalist Header */}
-            <div className="flex justify-between items-end border-b-2 border-slate-800 pb-6">
+            {/* RPG Header */}
+            <div className="flex justify-between items-end pb-6 mb-8 lg:p-6 lg:bg-[#151515] lg:border-4 lg:border-white lg:shadow-[8px_8px_0_0_#00e5ff] lg:rounded-none border-b-4 border-slate-800">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-                        RYUNIX GAME
+                    <h1 className="text-4xl font-pixel tracking-tight text-white mb-4 uppercase neon-text-cyan">
+                        LOBBY_TERMINAL
                     </h1>
                     <div className="flex items-center gap-3">
-                        <span className="text-slate-500 text-xs uppercase tracking-widest font-bold">Room ID</span>
-                        <span className="font-mono text-xl text-slate-300">
+                        <span className="text-[#ff007f] text-sm font-pixel uppercase">&gt; ROOM_ID:</span>
+                        <span className="font-sans font-bold text-2xl text-white bg-black px-2 border-2 border-slate-700">
                             {room.id}
                         </span>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                     <VoiceControls />
-                    <Button variant="danger" size="sm" onClick={leaveRoom}>
-                        LEAVE
+                    <Button size="lg" className="pixel-btn px-6 text-xl bg-red-900 border-red-500" onClick={leaveRoom}>
+                        EXIT_LOBBY
                     </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Game Selection */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="flex justify-between items-end">
-                        <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                            Select Game
+            <div className="flex flex-col lg:flex-row gap-12 w-full mx-auto">
+                {/* Game Selection Pane */}
+                <div className="lg:w-2/3 space-y-8 lg:pixel-box lg:p-8">
+                    <div className="flex justify-between items-end border-b-4 border-slate-800 pb-4">
+                        <h2 className="text-2xl font-pixel text-[#00e5ff] uppercase tracking-widest">
+                            &gt; SELECT_QUEST
                         </h2>
                         {!isHost && (
-                            <span className="text-xs text-slate-400 font-mono animate-pulse">
-                                HOST IS CHOOSING...
+                            <span className="text-xl text-[#ff007f] font-sans font-bold animate-pulse uppercase">
+                                WAITING_FOR_HOST...
                             </span>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {GAMES.map(game => (
-                            <Card
+                            <div
                                 key={game.id}
-                                hover={isHost}
-                                onClick={() => handleSelectGame(game.id)}
+                                onClick={() => isHost && handleSelectGame(game.id)}
                                 className={`
+                                    p-4 border-4 transition-all duration-75 relative
                                     ${selectedGame === game.id
-                                        ? 'border-slate-100 bg-slate-800 ring-1 ring-slate-100'
-                                        : 'border-slate-800 opacity-60 bg-slate-900'}
-                                    ${isHost ? 'hover:opacity-100' : 'cursor-default'}
-                                    transition-all duration-200
+                                        ? 'border-white bg-black shadow-[4px_4px_0_0_#ff007f]'
+                                        : 'border-slate-800 bg-[#0a0a0a] hover:border-slate-500'}
+                                    ${isHost ? 'cursor-pointer hover:bg-black' : 'cursor-default opacity-80'}
                                 `}
                             >
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className={`font-bold ${selectedGame === game.id ? 'text-white' : 'text-slate-400'}`}>
+                                    <h3 className={`font-pixel text-lg ${selectedGame === game.id ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
                                         {game.name}
                                     </h3>
-                                    <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                                    <span className="text-lg font-sans font-bold bg-white text-black px-2">
                                         {game.players}P
                                     </span>
                                 </div>
-                                <p className="text-sm text-slate-500">{game.desc}</p>
-                            </Card>
+                                <p className="text-lg font-sans text-slate-300 font-bold">{game.desc}</p>
+                                
+                                {selectedGame === game.id && (
+                                    <div className="absolute top-0 left-0 w-2 h-full bg-[#ff007f]" />
+                                )}
+                            </div>
                         ))}
                     </div>
 
                     {/* Package Selection */}
                     {isHost && selectedGame !== 'matching-minds' && (
-                        <div className="w-full">
+                        <div className="w-full mt-8 p-4 border-4 border-slate-800 bg-black">
                             <PackageSelector
                                 selectedPackageId={selectedPackageId}
                                 onSelectionChange={setSelectedPackageId}
@@ -174,24 +176,23 @@ export const RoomView: React.FC = () => {
                     )}
 
                     {isHost && (
-                        <div className="flex justify-end pt-4">
-                            <Button size="lg" onClick={startGame} className="px-12">
-                                START GAME
+                        <div className="flex justify-end pt-8">
+                            <Button size="lg" onClick={startGame} className="pixel-btn px-12 h-16 text-2xl w-full md:w-auto">
+                                START_ADVENTURE
                             </Button>
                         </div>
                     )}
                 </div>
 
-                {/* Player List */}
-                <div>
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex justify-between">
-                        <span>Players</span>
-                        <span>{room.players.length}/{room.maxPlayers}</span>
+                {/* Player List Pane */}
+                <div className="lg:w-1/3 lg:pixel-box-blue lg:p-6 h-fit">
+                    <h2 className="text-xl font-pixel text-[#ff007f] uppercase tracking-widest mb-6 flex justify-between border-b-4 border-slate-800 pb-2">
+                        <span>&gt; THE_PARTY</span>
+                        <span className="text-white">{room.players.length}/{room.maxPlayers}</span>
                     </h2>
-                    <Card className="min-h-[300px] border-slate-800 bg-slate-900">
+                    <div className="min-h-[300px] bg-black border-4 border-slate-800 p-2">
                         <Leaderboard players={room.players} maxHeight="h-full" />
-                    </Card>
-
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,19 +201,19 @@ export const RoomView: React.FC = () => {
     const renderGame = () => (
         <AnimatePresence mode="wait">
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-full max-w-screen-2xl mx-auto p-4"
+                className="w-full max-w-screen-2xl mx-auto lg:p-12 lg:pixel-box lg:shadow-[12px_12px_0_0_#ff007f] min-h-[80vh] flex flex-col"
             >
-                <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">In Game</span>
+                <div className="flex justify-between items-center mb-8 pb-4 border-b-4 border-slate-800">
+                    <div className="flex items-center gap-4">
+                        <span className="w-4 h-4 bg-[#00e5ff] animate-ping" />
+                        <span className="text-xl font-pixel text-[#00e5ff] uppercase tracking-widest">&gt; COMBAT_ENGAGED</span>
                     </div>
-                    <button onClick={leaveRoom} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-wider">
-                        Exit
-                    </button>
+                    <Button onClick={leaveRoom} className="pixel-btn bg-red-900 border-red-500 text-xl px-6">
+                        FLEE_BATTLE
+                    </Button>
                 </div>
 
                 {room.gameState?.type === 'split-steal' && <SplitStealGameComponent gameState={room.gameState} />}
@@ -237,7 +238,7 @@ export const RoomView: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-transparent mt-12 lg:p-12 w-full relative z-10">
             {room.status === RoomStatus.LOBBY && renderLobby()}
             {room.status === RoomStatus.GAME && renderGame()}
             {room.status === RoomStatus.RESULTS && <ResultsView />}

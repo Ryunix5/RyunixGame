@@ -149,6 +149,10 @@ export class MindReaderGame implements GamePlugin {
     }
 
     resolve(state: MindReaderState, players: Player[]): { [playerId: string]: number } {
-        return state.scores;
+        const finalScores: { [id: string]: number } = {};
+        Object.keys(state.scores).forEach(id => {
+            finalScores[id] = Math.min(state.scores[id] * 100, 100);
+        });
+        return finalScores;
     }
 }

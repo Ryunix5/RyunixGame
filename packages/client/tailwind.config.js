@@ -7,10 +7,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Outfit', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                sans: ['VT323', 'monospace'],
+                mono: ['VT323', 'monospace'],
+                pixel: ['"Press Start 2P"', 'cursive'],
             },
-            // Minimalist overrides (optional, but standard Slate is fine)
         },
     },
     plugins: [],

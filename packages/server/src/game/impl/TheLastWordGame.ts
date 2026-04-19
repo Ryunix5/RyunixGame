@@ -234,7 +234,7 @@ export class TheLastWordGame implements GamePlugin {
         players.forEach(p => {
             const lives = state.lives[p.id] || 0;
             if (lives > 0) scores[p.id] = lives * 10;
-            if (state.winner === p.id) scores[p.id] += 50; // Bonus for winning
+            if (state.winner === p.id) scores[p.id] = (scores[p.id] || 0) + 70; // 30 (from lives) + 70 = 100 max
         });
         return scores;
     }

@@ -115,7 +115,7 @@ export class BlindShapesGame implements GamePlugin {
             if (state.winnerIds?.includes(p.id)) {
                 scores[p.id] = 100;
             } else {
-                scores[p.id] = -50;
+                scores[p.id] = 0;
             }
         });
         return scores;

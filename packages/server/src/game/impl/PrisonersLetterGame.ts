@@ -195,6 +195,10 @@ export class PrisonersLetterGame implements GamePlugin {
     }
 
     resolve(state: PrisonersLetterState, players: Player[]): { [playerId: string]: number } {
-        return state.scores;
+        const normalizedScores: { [id: string]: number } = {};
+        Object.keys(state.scores).forEach(id => {
+            normalizedScores[id] = Math.min(state.scores[id] * 10, 100);
+        });
+        return normalizedScores;
     }
 }

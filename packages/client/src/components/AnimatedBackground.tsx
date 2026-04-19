@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-
 export const AnimatedBackground: React.FC = () => {
     return (
         <div
@@ -11,10 +9,11 @@ export const AnimatedBackground: React.FC = () => {
                 bottom: 0,
                 zIndex: 0,
                 overflow: 'hidden',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                backgroundColor: '#0a0a0a',
             }}
         >
-            {/* Animated Grid */}
+            {/* Retro 8-bit Dungeon Grid / Danganronpa cutscene style */}
             <div
                 style={{
                     position: 'absolute',
@@ -22,57 +21,29 @@ export const AnimatedBackground: React.FC = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    opacity: 0.1,
+                    opacity: 0.2, // Subtle so it doesn't distract
                     backgroundImage: `
-                        linear-gradient(to right, rgb(34, 211, 238) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgb(34, 211, 238) 1px, transparent 1px)
+                        linear-gradient(#ff007f 1px, transparent 1px),
+                        linear-gradient(90deg, #ff007f 1px, transparent 1px)
                     `,
-                    backgroundSize: '50px 50px',
+                    backgroundSize: '40px 40px',
+                    backgroundPosition: 'center center',
+                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.9)' // Dark vignette for that dungeon feel
                 }}
             />
-
-            {/* Animated gradient orbs */}
-            <motion.div
+            
+            {/* CRT Scanline overlay effect */}
+            <div 
                 style={{
                     position: 'absolute',
-                    width: '384px',
-                    height: '384px',
-                    borderRadius: '9999px',
-                    background: 'rgba(6, 182, 212, 0.1)',
-                    filter: 'blur(96px)',
-                    top: '10%',
-                    left: '10%'
-                }}
-                animate={{
-                    x: [0, 50, 0],
-                    y: [0, 30, 0],
-                }}
-                transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: 'easeInOut'
-                }}
-            />
-
-            <motion.div
-                style={{
-                    position: 'absolute',
-                    width: '384px',
-                    height: '384px',
-                    borderRadius: '9999px',
-                    background: 'rgba(168, 85, 247, 0.1)',
-                    filter: 'blur(96px)',
-                    bottom: '10%',
-                    right: '10%'
-                }}
-                animate={{
-                    x: [0, -50, 0],
-                    y: [0, -30, 0],
-                }}
-                transition={{
-                    duration: 25,
-                    repeat: Infinity,
-                    ease: 'easeInOut'
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))',
+                    backgroundSize: '100% 4px, 3px 100%',
+                    pointerEvents: 'none',
+                    zIndex: 10
                 }}
             />
         </div>

@@ -167,7 +167,7 @@ export class SplitStealGame implements GamePlugin {
             if (trust === maxTrust) {
                 finalScores[p.id] = 100;
             } else {
-                finalScores[p.id] = -50;
+                finalScores[p.id] = 0;
             }
         });
 

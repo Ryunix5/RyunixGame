@@ -4,7 +4,47 @@
 
 @layer base {
     body {
-        @apply bg-slate-950 text-slate-100 font-sans;
+        @apply bg-black text-slate-100 font-sans;
         min-height: 100vh;
+        letter-spacing: 0.05em;
+    }
+
+    /* Danganronpa 8-bit styling */
+    .pixel-box {
+        @apply bg-[#151515] border-4 border-white text-white;
+        box-shadow: 6px 6px 0px 0px #ff007f; /* Neon pink shadow */
+        border-radius: 0 !important;
+        position: relative;
+    }
+
+    .pixel-box-blue {
+        @apply bg-[#151515] border-4 border-white text-white;
+        box-shadow: 6px 6px 0px 0px #00e5ff; /* Neon cyan shadow */
+        border-radius: 0 !important;
+    }
+
+    .pixel-btn {
+        @apply bg-black border-4 border-white text-white uppercase transition-all duration-75;
+        box-shadow: 4px 4px 0px 0px #fff;
+        border-radius: 0 !important;
+    }
+
+    .pixel-btn:hover {
+        @apply bg-white text-black;
+        box-shadow: 4px 4px 0px 0px #ff007f;
+        transform: translate(-2px, -2px);
+    }
+    
+    .pixel-btn:active {
+        box-shadow: 0px 0px 0px 0px #ff007f;
+        transform: translate(4px, 4px);
+    }
+
+    .neon-text-pink {
+        text-shadow: 4px 4px 0px #ff007f;
+    }
+
+    .neon-text-cyan {
+        text-shadow: 4px 4px 0px #00e5ff;
     }
 }

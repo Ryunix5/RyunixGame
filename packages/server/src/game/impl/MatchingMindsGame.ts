@@ -32,7 +32,7 @@ export class MatchingMindsGame implements GamePlugin {
         const mmState = state as unknown as (MatchingMindsState & GameState);
 
         if (action.type === 'submit_word') {
-            return this.handleSubmitWord(mmState, senderId, action.word, action.playerCount);
+            return this.handleSubmitWord(mmState, senderId, action.word, action.playerName, action.playerCount);
         } else if (action.type === 'next_round') {
             return this.handleNextRound(mmState);
         }
@@ -40,7 +40,7 @@ export class MatchingMindsGame implements GamePlugin {
         return null;
     }
 
-    private handleSubmitWord(state: MatchingMindsState & GameState, playerId: string, word: string, playerCount: number): GameState | null {
+    private handleSubmitWord(state: MatchingMindsState & GameState, playerId: string, word: string, playerName: string, playerCount: number): GameState | null {
         if (state.phase !== 'SUBMITTING') {
             logger.warn('Invalid submission phase', { playerId, phase: state.phase });
             return null;
@@ -54,7 +54,7 @@ export class MatchingMindsGame implements GamePlugin {
         }
 
         // Store submission
-        state.submissions[playerId] = sanitizedWord;
+        state.submissions[playerId] = { word: sanitizedWord, playerName: playerName || playerId };
         logger.info('Word submitted', { playerId, word: sanitizedWord, total: Object.keys(state.submissions).length, playerCount });
 
         // Check if all players have submitted
@@ -71,9 +71,9 @@ export class MatchingMindsGame implements GamePlugin {
         const wordCounts: Record<string, number> = {};
         const playerSubmissions: Array<{ playerId: string; playerName: string; word: string }> = [];
 
-        Object.entries(state.submissions).forEach(([playerId, word]) => {
-            wordCounts[word] = (wordCounts[word] || 0) + 1;
-            playerSubmissions.push({ playerId, playerName: playerId, word });
+        Object.entries(state.submissions).forEach(([playerId, sub]) => {
+            wordCounts[sub.word] = (wordCounts[sub.word] || 0) + 1;
+            playerSubmissions.push({ playerId, playerName: sub.playerName, word: sub.word });
         });
 
         // Find most common word

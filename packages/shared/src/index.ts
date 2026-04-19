@@ -62,7 +62,7 @@ export interface MatchingMindsState {
     currentRound: number;
     maxRounds: number;
     rounds: MatchingMindsRound[];
-    submissions: Record<string, string>;
+    submissions: Record<string, { word: string; playerName: string }>;
     hasConverged: boolean;
     convergenceWord?: string;
 }

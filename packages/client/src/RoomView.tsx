@@ -100,7 +100,7 @@ export const RoomView: React.FC = () => {
     };
 
     const renderLobby = () => (
-        <div className="w-full max-w-5xl p-8 ani-fade-in flex flex-col gap-12">
+        <div className="w-full max-w-screen-2xl mx-auto p-8 ani-fade-in flex flex-col gap-12">
             {/* Minimalist Header */}
             <div className="flex justify-between items-end border-b-2 border-slate-800 pb-6">
                 <div>
@@ -164,7 +164,7 @@ export const RoomView: React.FC = () => {
                     </div>
 
                     {/* Package Selection */}
-                    {isHost && (
+                    {isHost && selectedGame !== 'matching-minds' && (
                         <div className="w-full">
                             <PackageSelector
                                 selectedPackageId={selectedPackageId}
@@ -203,7 +203,7 @@ export const RoomView: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-full max-w-7xl mx-auto p-4"
+                className="w-full max-w-screen-2xl mx-auto p-4"
             >
                 <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
                     <div className="flex items-center gap-3">

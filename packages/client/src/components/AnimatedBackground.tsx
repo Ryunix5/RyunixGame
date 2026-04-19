@@ -11,6 +11,10 @@ export const AnimatedBackground: React.FC = () => {
                 overflow: 'hidden',
                 pointerEvents: 'none',
                 backgroundColor: '#0a0a0a',
+                backgroundImage: 'url(/dark_rpg_trial_room.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'brightness(0.4) contrast(1.2) grayscale(0.5)'
             }}
         >
             {/* Retro 8-bit Dungeon Grid / Danganronpa cutscene style */}

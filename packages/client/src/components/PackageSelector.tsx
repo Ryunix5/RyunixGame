@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSocket } from '../SocketContext';
-import { motion } from 'framer-motion';
 
 interface Package {
     id: string;
@@ -17,6 +16,7 @@ interface PackageSelectorProps {
 
 export function PackageSelector({ selectedPackageId, onSelectionChange }: PackageSelectorProps) {
     const [packages, setPackages] = useState<Package[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const { socket } = useSocket();
 
     useEffect(() => {
@@ -27,105 +27,76 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
         });
     }, [socket]);
 
+    const filteredPackages = useMemo(() => {
+        const lowerSearch = searchQuery.toLowerCase();
+        return packages.filter(pkg => 
+            pkg.name.toLowerCase().includes(lowerSearch) || 
+            pkg.description.toLowerCase().includes(lowerSearch)
+        );
+    }, [packages, searchQuery]);
+
     const selectedPackage = packages.find(p => p.id === selectedPackageId);
 
     return (
-        <div style={{
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '20px',
-            border: '1px solid rgba(99, 102, 241, 0.3)'
-        }}>
-            <h3 style={{
-                fontSize: '20px',
-                fontWeight: '700',
-                marginBottom: '12px',
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-            }}>
-                Select Content Package
+        <div className="w-full h-full flex flex-col font-pixel text-slate-300">
+            <h3 className="text-xl font-bold text-[#ff007f] mb-2 uppercase tracking-widest border-b-2 border-slate-800 pb-2">
+                &gt; CONTENT_PACKAGES
             </h3>
-            <p style={{
-                fontSize: '14px',
-                color: '#9ca3af',
-                marginBottom: '16px'
-            }}>
-                {selectedPackage ? `${selectedPackage.name} - ${selectedPackage.topicCount} topics` : 'Choose a package'}
-            </p>
+            
+            <input
+                type="text"
+                placeholder="SEARCH_INDEX..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-black border-2 border-slate-800 text-[#00e5ff] px-4 py-2 mb-4 focus:outline-none focus:border-[#ff007f] font-sans font-bold uppercase transition-colors"
+            />
 
-            <div style={{
-                display: 'grid',
-                gap: '12px'
-            }}>
-                {packages.map(pkg => (
-                    <motion.label
-                        key={pkg.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '16px',
-                            background: selectedPackageId === pkg.id
-                                ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))'
-                                : 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            border: selectedPackageId === pkg.id
-                                ? '2px solid #6366f1'
-                                : '2px solid transparent',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <input
-                            type="radio"
-                            name="package"
-                            checked={selectedPackageId === pkg.id}
-                            onChange={() => onSelectionChange(pkg.id)}
-                            style={{
-                                width: '20px',
-                                height: '20px',
-                                marginRight: '12px',
-                                cursor: 'pointer',
-                                accentColor: '#6366f1'
-                            }}
-                        />
-                        <div style={{ flex: 1 }}>
-                            <div style={{
-                                fontWeight: '600',
-                                fontSize: '16px',
-                                marginBottom: '4px'
-                            }}>
-                                {pkg.name}
-                            </div>
-                            <div style={{
-                                fontSize: '13px',
-                                color: '#9ca3af'
-                            }}>
-                                {pkg.description} • {pkg.topicCount} topics
-                            </div>
-                        </div>
-                        <div style={{
-                            fontSize: '12px',
-                            padding: '4px 12px',
-                            borderRadius: '12px',
-                            background: pkg.difficulty === 'easy'
-                                ? 'rgba(34, 197, 94, 0.2)'
-                                : pkg.difficulty === 'hard'
-                                    ? 'rgba(239, 68, 68, 0.2)'
-                                    : 'rgba(251, 191, 36, 0.2)',
-                            color: pkg.difficulty === 'easy'
-                                ? '#22c55e'
-                                : pkg.difficulty === 'hard'
-                                    ? '#ef4444'
-                                    : '#fbbf24'
-                        }}>
-                            {pkg.difficulty}
-                        </div>
-                    </motion.label>
-                ))}
+            <div className="flex-1 overflow-y-auto max-h-48 custom-scrollbar border-2 border-slate-900 bg-[#0a0a0a] p-2 space-y-2 relative">
+                {filteredPackages.length === 0 ? (
+                    <div className="p-4 text-center text-slate-600 animate-pulse">404: ARCHIVE_EMPTY</div>
+                ) : (
+                    filteredPackages.map(pkg => {
+                        const isSelected = selectedPackageId === pkg.id;
+                        return (
+                            <label
+                                key={pkg.id}
+                                className={`
+                                    flex items-center p-3 cursor-pointer border-2 transition-all duration-75 relative
+                                    ${isSelected 
+                                        ? 'border-[#00e5ff] bg-slate-900' 
+                                        : 'border-slate-800 hover:bg-black hover:border-slate-600'}
+                                `}
+                            >
+                                <input
+                                    type="radio"
+                                    name="package"
+                                    checked={isSelected}
+                                    onChange={() => onSelectionChange(pkg.id)}
+                                    className="hidden"
+                                />
+                                {isSelected && (
+                                    <div className="absolute top-0 left-0 w-2 h-full bg-[#00e5ff]" />
+                                )}
+                                <div className={`flex-1 ${isSelected ? 'ml-3' : 'ml-1'}`}>
+                                    <div className={`text-lg uppercase ${isSelected ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
+                                        {pkg.name}
+                                    </div>
+                                    <div className="text-sm font-sans font-bold text-slate-500">
+                                        {pkg.description} • {pkg.topicCount} TOPICS
+                                    </div>
+                                </div>
+                            </label>
+                        );
+                    })
+                )}
+            </div>
+            
+            {/* Display Selected Status */}
+            <div className="mt-4 p-2 border-t-2 border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                <span>ACTIVE_ARCHIVE:</span>
+                <span className="text-white bg-slate-900 px-2 py-1 border border-slate-700">
+                    {selectedPackage ? selectedPackage.name : 'NONE'}
+                </span>
             </div>
         </div>
     );

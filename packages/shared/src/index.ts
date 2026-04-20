@@ -31,6 +31,7 @@ export enum SocketEvents {
     JOIN_ROOM = 'join_room',
     CREATE_ROOM = 'create_room',
     LEAVE_ROOM = 'leave_room',
+    KICK_PLAYER = 'kick_player',
     SEND_MESSAGE = 'send_message',
     GAME_ACTION = 'game_action',
     START_GAME = 'start_game',
@@ -42,6 +43,7 @@ export enum SocketEvents {
 
     // Server -> Client
     ROOM_UPDATED = 'room_updated',
+    KICKED = 'kicked',
     ERROR = 'error',
     GAME_STATE = 'game_state',
     CHAT_MESSAGE = 'chat_message',

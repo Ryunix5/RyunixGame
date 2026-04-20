@@ -11,9 +11,13 @@ interface UnknownToOneState {
     blackenedId?: string;
     // votes: { [voterId: string]: string }; // Hidden from client mostly until reveal? or public? Usually public debate.
     // Actually we shoud show who voted who? Or just counts?
+    // Actually we shoud show who voted who? Or just counts?
     // Let's show who voted who for openness.
     votes: { [voterId: string]: string };
     scores: { [playerId: string]: number };
+    turnOrder: string[];
+    currentTurnIndex: number;
+    playerWords: { [playerId: string]: string };
     winnerIds?: string[];
     blackenedGuess?: string;
     blackenedCaught?: boolean;
@@ -24,6 +28,8 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
     const myId = socket?.id;
     const [wordInput, setWordInput] = useState('');
     const [guessInput, setGuessInput] = useState('');
+    const [turnWordInput, setTurnWordInput] = useState('');
+    const [selectedVoteId, setSelectedVoteId] = useState<string | null>(null);
     const chatRef = useRef<ChatComponentHandle>(null);
 
     // Clear chat when round resets (entering SETUP phase)
@@ -46,11 +52,22 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
         });
     };
 
-    const vote = (targetId: string) => {
+    const sayWord = () => {
+        if (!turnWordInput.trim()) return;
         socket?.emit(SocketEvents.GAME_ACTION, {
             roomId: room.id,
-            action: { type: 'vote', targetId }
+            action: { type: 'say_word', word: turnWordInput }
         });
+        setTurnWordInput('');
+    };
+
+    const confirmVote = () => {
+        if (!selectedVoteId) return;
+        socket?.emit(SocketEvents.GAME_ACTION, {
+            roomId: room.id,
+            action: { type: 'vote', targetId: selectedVoteId }
+        });
+        setSelectedVoteId(null);
     };
 
     const submitGuess = () => {
@@ -133,7 +150,94 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                         </div>
                     )}
 
-                    {/* VOTING / DEBATE PHASE */}
+                    {/* DEBATE PHASE (Turns) */}
+                    {gameState.phase === 'DEBATE' && (
+                        <div className="w-full max-w-4xl animate-in fade-in flex flex-col items-center">
+                            <div className="mb-8 text-center">
+                                {amIBlackened ? (
+                                    <div className="p-6 bg-red-950/30 border border-red-900 rounded-2xl">
+                                        <h3 className="text-2xl font-black text-red-500 mb-2">YOU ARE BLACKENED</h3>
+                                        <p className="text-gray-400">You don't know the word! Guess it or say something vague to blend in.</p>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 bg-purple-950/30 border border-purple-900 rounded-2xl">
+                                        <h3 className="text-lg font-bold text-gray-400 mb-2">THE SECRET WORD IS</h3>
+                                        <p className="text-4xl font-black text-purple-400 tracking-tight">"{gameState.secretWord}"</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="w-full mb-8">
+                                <h4 className="text-center text-gray-400 uppercase tracking-widest font-bold mb-4">Turn Order</h4>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {gameState.turnOrder?.map((playerId, i) => {
+                                        const p = room.players.find(p => p.id === playerId);
+                                        const isCurrent = i === gameState.currentTurnIndex;
+                                        const hasPlayed = i < gameState.currentTurnIndex;
+                                        
+                                        return (
+                                            <div 
+                                                key={playerId} 
+                                                className={`px-4 py-2 rounded border transition-all ${
+                                                    isCurrent ? 'bg-purple-600/20 border-purple-500 scale-110 text-white font-bold' :
+                                                    hasPlayed ? 'bg-gray-800 border-gray-700 text-gray-500' :
+                                                    'bg-gray-900 border-gray-800 text-gray-400'
+                                                }`}
+                                            >
+                                                {p?.name}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Player Action Area */}
+                            {gameState.turnOrder?.[gameState.currentTurnIndex] === myId ? (
+                                <div className="w-full max-w-md bg-purple-900/10 p-6 rounded-xl border border-purple-500/50 mb-8 text-center">
+                                    <h3 className="text-xl font-bold text-purple-400 mb-4 animate-pulse">Your Turn!</h3>
+                                    <p className="text-gray-400 mb-4">Say a word that proves you know the secret.</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={turnWordInput}
+                                            onChange={e => setTurnWordInput(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && sayWord()}
+                                            placeholder="Type a word..."
+                                            className="flex-1 bg-black border border-gray-600 rounded p-3 text-center text-white focus:border-purple-500 outline-none"
+                                        />
+                                        <button 
+                                            onClick={sayWord}
+                                            disabled={!turnWordInput.trim()}
+                                            className="px-6 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 rounded font-bold transition-colors"
+                                        >
+                                            SAY
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl border border-gray-800 mb-8 text-center">
+                                    <p className="text-gray-400">
+                                        Waiting for <span className="text-white font-bold">{room.players.find(p => p.id === gameState.turnOrder?.[gameState.currentTurnIndex])?.name}</span> to say a word...
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Spoken Words */}
+                            <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {room.players.map(p => (
+                                    <div key={p.id} className="bg-gray-900 border border-gray-800 p-4 rounded-xl flex flex-col pt-3">
+                                        <span className="text-xs text-gray-500 font-bold mb-2">{p.name}</span>
+                                        {gameState.playerWords?.[p.id] ? (
+                                            <span className="text-lg font-bold text-white uppercase italic">"{gameState.playerWords[p.id]}"</span>
+                                        ) : (
+                                            <span className="text-gray-700 italic">...</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VOTING PHASE */}
                     {gameState.phase === 'VOTING' && (
                         <div className="w-full max-w-2xl animate-in fade-in">
                             <div className="mb-12 text-center">
@@ -155,16 +259,20 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                 {room.players.map(p => {
                                     const votesForMe = Object.values(gameState.votes).filter(id => id === p.id).length;
                                     const iVotedFor = gameState.votes[myId || ''];
+                                    const isSelected = selectedVoteId === p.id;
+                                    const isAlreadyVoted = !!iVotedFor;
 
                                     return (
                                         <button
                                             key={p.id}
-                                            onClick={() => vote(p.id)}
-                                            disabled={!!iVotedFor}
-                                            className={`relative p-6 rounded-xl border-2 transition-all flex flex-col items-center ${iVotedFor === p.id ? 'bg-red-900/40 border-red-500' :
+                                            onClick={() => !isAlreadyVoted && setSelectedVoteId(p.id)}
+                                            disabled={isAlreadyVoted}
+                                            className={`relative p-6 rounded-xl border-2 transition-all flex flex-col items-center ${
+                                                iVotedFor === p.id ? 'bg-red-900/40 border-red-500' :
+                                                isSelected ? 'bg-purple-900/40 border-purple-500' :
                                                 'bg-gray-900 border-gray-800 hover:border-gray-600 hover:bg-gray-800'
-                                                }`}>
-                                            <span className={`font-bold text-lg mb-1 ${p.id === myId ? 'text-purple-400' : 'text-white'}`}>
+                                            }`}>
+                                            <span className={`font-bold text-lg mb-1 ${p.id === myId ? 'text-gray-500' : 'text-white'}`}>
                                                 {p.name} {p.id === myId && '(YOU)'}
                                             </span>
                                             {votesForMe > 0 && (
@@ -176,6 +284,27 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                     );
                                 })}
                             </div>
+
+                            {!gameState.votes[myId || ''] && (
+                                <div className="mt-8 text-center bg-gray-900 p-6 rounded-xl border border-gray-800">
+                                    {selectedVoteId ? (
+                                        <div className="flex flex-col items-center gap-4">
+                                            <p className="text-gray-300">
+                                                Vote for <span className="font-bold text-white text-xl mx-2">{room.players.find(p => p.id === selectedVoteId)?.name}</span>?
+                                            </p>
+                                            <button 
+                                                onClick={confirmVote} 
+                                                className="px-8 py-3 bg-red-600 hover:bg-red-500 rounded font-bold uppercase transition block"
+                                            >
+                                                Confirm Vote
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-500 italic">Select a player above to cast your vote.</p>
+                                    )}
+                                </div>
+                            )}
+
                             <p className="text-center mt-6 text-gray-500 text-sm">
                                 {Object.keys(gameState.votes).length} / {room.players.length} Voted
                             </p>

@@ -9,6 +9,9 @@ interface UnknownToOneState extends GameState {
     blackenedId?: string;
     votes: { [voterId: string]: string }; // voterId -> suspicionId
     scores: { [playerId: string]: number };
+    turnOrder: string[];
+    currentTurnIndex: number;
+    playerWords: { [playerId: string]: string };
     winnerIds?: string[];
     blackenedGuess?: string; // What the blackened guess
     blackenedCaught?: boolean; // Result of voting
@@ -36,6 +39,9 @@ export class UnknownToOneGame implements GamePlugin {
             round: 1,
             phase: 'SETUP',
             scores,
+            turnOrder: [],
+            currentTurnIndex: 0,
+            playerWords: {},
             votes: {},
             winnerIds: undefined,
             availableWords: words
@@ -63,6 +69,18 @@ export class UnknownToOneGame implements GamePlugin {
                     this.startRound(state, Object.keys(state.scores));
                     return state;
                 }
+            }
+        }
+
+        if (state.phase === 'DEBATE') {
+            if (action.type === 'say_word' && action.word) {
+                if (senderId !== state.turnOrder[state.currentTurnIndex]) return null;
+                state.playerWords[senderId] = action.word;
+                state.currentTurnIndex++;
+                if (state.currentTurnIndex >= state.turnOrder.length) {
+                    state.phase = 'VOTING';
+                }
+                return state;
             }
         }
 
@@ -105,6 +123,9 @@ export class UnknownToOneGame implements GamePlugin {
                 state.secretWord = undefined;
                 state.blackenedId = undefined;
                 state.votes = {};
+                state.turnOrder = [];
+                state.currentTurnIndex = 0;
+                state.playerWords = {};
                 state.blackenedGuess = undefined;
                 state.blackenedCaught = undefined;
                 return state;
@@ -119,16 +140,11 @@ export class UnknownToOneGame implements GamePlugin {
         const idx = Math.floor(Math.random() * playerIds.length);
         state.blackenedId = playerIds[idx];
         state.phase = 'DEBATE';
-        // Move to Voting manually? Or timer? 
-        // User: "non-stop debate... no pauses" 
-        // We probably need a button to "Start Voting".
-        // For simplicity, let's just let them vote whenever in Debate phase, effectively merging Debate/Voting 
-        // OR add a "Start Voting" button for Host.
-        // Let's make 'set_word' go straight to VOTING in frontend terms? No, they need to see prompt first.
-        // Actually, let's add a "End Debate / Vote" action.
-        state.phase = 'VOTING'; // Simplifying: The UI shows the info, and voting is open immediately? 
-        // "non-stop debate" implies they talk WHILST voting or until they decide to vote?
-        // Let's assume voting is enabled immediately.
+        
+        // Randomize turn order
+        state.turnOrder = [...playerIds].sort(() => Math.random() - 0.5);
+        state.currentTurnIndex = 0;
+        state.playerWords = {};
     }
 
     private resolveVoting(state: UnknownToOneState) {

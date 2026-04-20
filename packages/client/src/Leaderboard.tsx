@@ -5,9 +5,12 @@ interface LeaderboardProps {
     players: Player[];
     scores?: { [playerId: string]: number };
     maxHeight?: string;
+    myId?: string;
+    isHost?: boolean;
+    onKick?: (playerId: string) => void;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHeight = 'max-h-64' }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHeight = 'max-h-64', myId, isHost, onKick }) => {
     // Sort players by score
     const sortedPlayers = [...players].sort((a, b) => {
         const scoreA = scores ? (scores[a.id] || 0) : a.score;
@@ -37,10 +40,20 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
                                     {p.name}
                                 </span>
                             </div>
-                            <span className={`font-mono font-bold ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-gray-500'
-                                }`}>
-                                {score}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <span className={`font-mono font-bold ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-gray-500'
+                                    }`}>
+                                    {score}
+                                </span>
+                                {isHost && onKick && myId !== p.id && (
+                                    <button
+                                        onClick={() => onKick(p.id)}
+                                        className="text-xs bg-red-900/50 hover:bg-red-600 text-red-200 px-2 py-1 border border-red-800 rounded font-bold uppercase transition"
+                                    >
+                                        Kick
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     );
                 })}

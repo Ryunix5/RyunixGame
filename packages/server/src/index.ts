@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import fs from 'fs';
@@ -242,6 +242,26 @@ io.on('connection', (socket) => {
             logger.info('Player left room', { socketId: socket.id, roomId: updatedRoom.id });
             socket.leave(updatedRoom.id);
         }
+    });
+
+    socket.on(SocketEvents.KICK_PLAYER, (data: { roomId: string, targetId: string }) => {
+        const room = roomManager.getRoom(data.roomId);
+        if (!room || room.hostId !== socket.id) return;
+        
+        const target = room.players.find(p => p.id === data.targetId);
+        if (!target) return;
+        
+        roomManager.leaveRoom(room.id, data.targetId);
+        
+        const targetSocket = io.sockets.sockets.get(target.socketId);
+        if (targetSocket) {
+            targetSocket.emit(SocketEvents.KICKED);
+            targetSocket.leave(room.id);
+        }
+
+        io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+        databaseService.saveRoom(room);
+        logger.info('Player kicked', { roomId: room.id, targetId: data.targetId });
     });
 
     // Get available content packages

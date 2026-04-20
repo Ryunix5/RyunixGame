@@ -115,6 +115,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
         });
 
+        newSocket.on(SocketEvents.KICKED, () => {
+            alert('You have been kicked by the host.');
+            setRoom(null);
+            reconnectionManager.clearRoomState();
+        });
+
         return () => {
             newSocket.close();
         };

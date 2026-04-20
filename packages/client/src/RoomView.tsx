@@ -98,6 +98,13 @@ export const RoomView: React.FC = () => {
         socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId: selectedPackageId });
     };
 
+    const handleKick = (playerId: string) => {
+        if (!isHost || !socket) return;
+        if (confirm('Are you sure you want to kick this player?')) {
+            socket.emit(SocketEvents.KICK_PLAYER, { roomId: room.id, targetId: playerId });
+        }
+    };
+
     const renderLobby = () => (
         <div className="w-full max-w-screen-2xl mx-auto p-8 ani-fade-in flex flex-col gap-12">
             {/* RPG Header */}
@@ -191,7 +198,13 @@ export const RoomView: React.FC = () => {
                         <span className="text-white">{room.players.length}/{room.maxPlayers}</span>
                     </h2>
                     <div className="min-h-[300px] bg-black border-4 border-slate-800 p-2">
-                        <Leaderboard players={room.players} maxHeight="h-full" />
+                        <Leaderboard 
+                            players={room.players} 
+                            maxHeight="h-full" 
+                            myId={socket?.id}
+                            isHost={isHost}
+                            onKick={handleKick}
+                        />
                     </div>
                 </div>
             </div>

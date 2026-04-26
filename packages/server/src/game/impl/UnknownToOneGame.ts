@@ -4,7 +4,7 @@ import { packageLoader } from '../../services/PackageLoader';
 
 interface UnknownToOneState extends GameState {
     round: number;
-    phase: 'SETUP' | 'DEBATE' | 'VOTING' | 'BONUS_GUESS' | 'REVEAL';
+    phase: 'SETUP' | 'DEBATE' | 'DECISION' | 'VOTING' | 'BONUS_GUESS' | 'REVEAL';
     secretWord?: string;
     blackenedId?: string;
     votes: { [voterId: string]: string }; // voterId -> suspicionId
@@ -12,6 +12,7 @@ interface UnknownToOneState extends GameState {
     turnOrder: string[];
     currentTurnIndex: number;
     playerWords: { [playerId: string]: string };
+    decisionVotes?: { [playerId: string]: 'vote_now' | 'another_round' };
     winnerIds?: string[];
     blackenedGuess?: string; // What the blackened guess
     blackenedCaught?: boolean; // Result of voting
@@ -42,6 +43,7 @@ export class UnknownToOneGame implements GamePlugin {
             turnOrder: [],
             currentTurnIndex: 0,
             playerWords: {},
+            decisionVotes: {},
             votes: {},
             winnerIds: undefined,
             availableWords: words
@@ -78,7 +80,40 @@ export class UnknownToOneGame implements GamePlugin {
                 state.playerWords[senderId] = action.word;
                 state.currentTurnIndex++;
                 if (state.currentTurnIndex >= state.turnOrder.length) {
-                    state.phase = 'VOTING';
+                    state.phase = 'DECISION';
+                    state.decisionVotes = {};
+                }
+                return state;
+            }
+        }
+
+        if (state.phase === 'DECISION') {
+            if (action.type === 'decision_vote' && (action.choice === 'vote_now' || action.choice === 'another_round')) {
+                if (!state.decisionVotes) state.decisionVotes = {};
+                if (state.decisionVotes[senderId]) return null; // Already voted
+                state.decisionVotes[senderId] = action.choice;
+
+                // Check if all voted
+                const voterCount = Object.keys(state.decisionVotes).length;
+                const totalPlayers = Object.keys(state.scores).length;
+
+                if (voterCount >= totalPlayers) {
+                    let voteNowCount = 0;
+                    let anotherRoundCount = 0;
+                    Object.values(state.decisionVotes).forEach(choice => {
+                        if (choice === 'vote_now') voteNowCount++;
+                        else anotherRoundCount++;
+                    });
+
+                    if (anotherRoundCount > voteNowCount) {
+                        state.phase = 'DEBATE';
+                        state.currentTurnIndex = 0;
+                        state.playerWords = {};
+                        state.decisionVotes = {};
+                    } else {
+                        state.phase = 'VOTING';
+                        state.decisionVotes = {};
+                    }
                 }
                 return state;
             }
@@ -126,6 +161,7 @@ export class UnknownToOneGame implements GamePlugin {
                 state.turnOrder = [];
                 state.currentTurnIndex = 0;
                 state.playerWords = {};
+                state.decisionVotes = {};
                 state.blackenedGuess = undefined;
                 state.blackenedCaught = undefined;
                 return state;

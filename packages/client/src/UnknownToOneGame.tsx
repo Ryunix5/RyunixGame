@@ -6,7 +6,7 @@ import { ChatComponent, ChatComponentHandle } from './ChatComponent';
 interface UnknownToOneState {
     type: 'unknown-to-one';
     round: number;
-    phase: 'SETUP' | 'DEBATE' | 'VOTING' | 'BONUS_GUESS' | 'REVEAL';
+    phase: 'SETUP' | 'DEBATE' | 'DECISION' | 'VOTING' | 'BONUS_GUESS' | 'REVEAL';
     secretWord?: string;
     blackenedId?: string;
     // votes: { [voterId: string]: string }; // Hidden from client mostly until reveal? or public? Usually public debate.
@@ -18,6 +18,7 @@ interface UnknownToOneState {
     turnOrder: string[];
     currentTurnIndex: number;
     playerWords: { [playerId: string]: string };
+    decisionVotes?: { [playerId: string]: 'vote_now' | 'another_round' };
     winnerIds?: string[];
     blackenedGuess?: string;
     blackenedCaught?: boolean;
@@ -234,6 +235,52 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* DECISION PHASE */}
+                    {gameState.phase === 'DECISION' && (
+                        <div className="w-full max-w-2xl animate-in fade-in flex flex-col items-center">
+                            <div className="mb-8 text-center">
+                                <h3 className="text-3xl font-black text-white mb-2 uppercase">Decide the Next Step</h3>
+                                <p className="text-gray-400">Do you want to vote out the blackened now, or go for another round of debate?</p>
+                            </div>
+                            
+                            <div className="flex gap-6 w-full max-w-md">
+                                <button 
+                                    onClick={() => socket?.emit(SocketEvents.GAME_ACTION, { roomId: room.id, action: { type: 'decision_vote', choice: 'vote_now' } })}
+                                    disabled={!!gameState.decisionVotes?.[myId || '']}
+                                    className={`flex-1 py-6 rounded-xl font-bold uppercase transition-all border-2 ${
+                                        gameState.decisionVotes?.[myId || ''] === 'vote_now' 
+                                            ? 'bg-red-900/50 border-red-500 text-white'
+                                            : 'bg-gray-900 border-gray-800 hover:border-gray-600 text-gray-300'
+                                    }`}
+                                >
+                                    Vote Now
+                                    <div className="text-xs text-gray-500 mt-2">
+                                        {Object.values(gameState.decisionVotes || {}).filter(v => v === 'vote_now').length} Votes
+                                    </div>
+                                </button>
+                                
+                                <button 
+                                    onClick={() => socket?.emit(SocketEvents.GAME_ACTION, { roomId: room.id, action: { type: 'decision_vote', choice: 'another_round' } })}
+                                    disabled={!!gameState.decisionVotes?.[myId || '']}
+                                    className={`flex-1 py-6 rounded-xl font-bold uppercase transition-all border-2 ${
+                                        gameState.decisionVotes?.[myId || ''] === 'another_round' 
+                                            ? 'bg-blue-900/50 border-blue-500 text-white'
+                                            : 'bg-gray-900 border-gray-800 hover:border-gray-600 text-gray-300'
+                                    }`}
+                                >
+                                    Another Round
+                                    <div className="text-xs text-gray-500 mt-2">
+                                        {Object.values(gameState.decisionVotes || {}).filter(v => v === 'another_round').length} Votes
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            <p className="text-center mt-8 text-gray-500 text-sm">
+                                {Object.keys(gameState.decisionVotes || {}).length} / {room.players.length} Voted
+                            </p>
                         </div>
                     )}
 

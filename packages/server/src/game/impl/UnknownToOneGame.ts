@@ -13,6 +13,7 @@ interface UnknownToOneState extends GameState {
     currentTurnIndex: number;
     playerWords: { [playerId: string]: string };
     decisionVotes?: { [playerId: string]: 'vote_now' | 'another_round' };
+    readyPlayers: string[];
     winnerIds?: string[];
     blackenedGuess?: string; // What the blackened guess
     blackenedCaught?: boolean; // Result of voting
@@ -44,6 +45,7 @@ export class UnknownToOneGame implements GamePlugin {
             currentTurnIndex: 0,
             playerWords: {},
             decisionVotes: {},
+            readyPlayers: [],
             votes: {},
             winnerIds: undefined,
             availableWords: words
@@ -79,9 +81,20 @@ export class UnknownToOneGame implements GamePlugin {
                 if (senderId !== state.turnOrder[state.currentTurnIndex]) return null;
                 state.playerWords[senderId] = action.word;
                 state.currentTurnIndex++;
-                if (state.currentTurnIndex >= state.turnOrder.length) {
+                return state;
+            }
+
+            if (action.type === 'ready') {
+                if (state.currentTurnIndex < state.turnOrder.length) return null;
+                if (!state.readyPlayers.includes(senderId)) {
+                    state.readyPlayers.push(senderId);
+                }
+
+                const totalPlayers = Object.keys(state.scores).length;
+                if (state.readyPlayers.length >= totalPlayers) {
                     state.phase = 'DECISION';
                     state.decisionVotes = {};
+                    state.readyPlayers = [];
                 }
                 return state;
             }
@@ -162,6 +175,7 @@ export class UnknownToOneGame implements GamePlugin {
                 state.currentTurnIndex = 0;
                 state.playerWords = {};
                 state.decisionVotes = {};
+                state.readyPlayers = [];
                 state.blackenedGuess = undefined;
                 state.blackenedCaught = undefined;
                 return state;
@@ -181,6 +195,7 @@ export class UnknownToOneGame implements GamePlugin {
         state.turnOrder = [...playerIds].sort(() => Math.random() - 0.5);
         state.currentTurnIndex = 0;
         state.playerWords = {};
+        state.readyPlayers = [];
     }
 
     private resolveVoting(state: UnknownToOneState) {

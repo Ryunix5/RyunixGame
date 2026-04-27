@@ -19,6 +19,7 @@ interface UnknownToOneState {
     currentTurnIndex: number;
     playerWords: { [playerId: string]: string };
     decisionVotes?: { [playerId: string]: 'vote_now' | 'another_round' };
+    readyPlayers: string[];
     winnerIds?: string[];
     blackenedGuess?: string;
     blackenedCaught?: boolean;
@@ -89,6 +90,13 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
         socket?.emit(SocketEvents.GAME_ACTION, {
             roomId: room.id,
             action: { type: 'next_round' }
+        });
+    };
+
+    const proceedToDecision = () => {
+        socket?.emit(SocketEvents.GAME_ACTION, {
+            roomId: room.id,
+            action: { type: 'ready' }
         });
     };
 
@@ -193,32 +201,51 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                             </div>
 
                             {/* Player Action Area */}
-                            {gameState.turnOrder?.[gameState.currentTurnIndex] === myId ? (
-                                <div className="w-full max-w-md bg-purple-900/10 p-6 rounded-xl border border-purple-500/50 mb-8 text-center">
-                                    <h3 className="text-xl font-bold text-purple-400 mb-4 animate-pulse">Your Turn!</h3>
-                                    <p className="text-gray-400 mb-4">Say a word that proves you know the secret.</p>
-                                    <div className="flex gap-2">
-                                        <input
-                                            value={turnWordInput}
-                                            onChange={e => setTurnWordInput(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && sayWord()}
-                                            placeholder="Type a word..."
-                                            className="flex-1 bg-black border border-gray-600 rounded p-3 text-center text-white focus:border-purple-500 outline-none"
-                                        />
-                                        <button 
-                                            onClick={sayWord}
-                                            disabled={!turnWordInput.trim()}
-                                            className="px-6 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 rounded font-bold transition-colors"
-                                        >
-                                            SAY
-                                        </button>
+                            {gameState.currentTurnIndex < gameState.turnOrder.length ? (
+                                gameState.turnOrder[gameState.currentTurnIndex] === myId ? (
+                                    <div className="w-full max-w-md bg-purple-900/10 p-6 rounded-xl border border-purple-500/50 mb-8 text-center">
+                                        <h3 className="text-xl font-bold text-purple-400 mb-4 animate-pulse">Your Turn!</h3>
+                                        <p className="text-gray-400 mb-4">Say a word that proves you know the secret.</p>
+                                        <div className="flex gap-2">
+                                            <input
+                                                value={turnWordInput}
+                                                onChange={e => setTurnWordInput(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && sayWord()}
+                                                placeholder="Type a word..."
+                                                className="flex-1 bg-black border border-gray-600 rounded p-3 text-center text-white focus:border-purple-500 outline-none"
+                                            />
+                                            <button 
+                                                onClick={sayWord}
+                                                disabled={!turnWordInput.trim()}
+                                                className="px-6 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 rounded font-bold transition-colors"
+                                            >
+                                                SAY
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl border border-gray-800 mb-8 text-center">
+                                        <p className="text-gray-400">
+                                            Waiting for <span className="text-white font-bold">{room.players.find(p => p.id === gameState.turnOrder[gameState.currentTurnIndex])?.name}</span> to say a word...
+                                        </p>
+                                    </div>
+                                )
                             ) : (
-                                <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl border border-gray-800 mb-8 text-center">
-                                    <p className="text-gray-400">
-                                        Waiting for <span className="text-white font-bold">{room.players.find(p => p.id === gameState.turnOrder?.[gameState.currentTurnIndex])?.name}</span> to say a word...
-                                    </p>
+                                <div className="w-full max-w-md bg-green-900/10 p-6 rounded-xl border border-green-500/50 mb-8 text-center">
+                                    <h3 className="text-xl font-bold text-green-400 mb-2">Everyone has spoken!</h3>
+                                    <p className="text-gray-400 mb-4">Read the words below, then proceed to the next step.</p>
+                                    {gameState.readyPlayers.includes(myId) ? (
+                                        <div className="py-3 bg-gray-800 text-gray-500 rounded font-bold italic animate-pulse">
+                                            Waiting for others ({gameState.readyPlayers.length} / {room.players.length})...
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={proceedToDecision}
+                                            className="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                                        >
+                                            PROCEED TO DECISION
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
@@ -278,9 +305,21 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                 </button>
                             </div>
                             
-                            <p className="text-center mt-8 text-gray-500 text-sm">
+                            <p className="text-center mt-8 text-gray-500 text-sm mb-8">
                                 {Object.keys(gameState.decisionVotes || {}).length} / {room.players.length} Voted
                             </p>
+
+                            <div className="w-full border-t border-gray-800 pt-8">
+                                <h4 className="text-center text-gray-500 uppercase tracking-widest font-bold mb-4">Recap: Spoken Words</h4>
+                                <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {room.players.map(p => (
+                                        <div key={p.id} className="bg-gray-900/50 border border-gray-800 p-4 rounded-xl flex flex-col">
+                                            <span className="text-xs text-gray-500 font-bold mb-1">{p.name}</span>
+                                            <span className="text-lg font-bold text-white uppercase italic">"{gameState.playerWords?.[p.id] || '???'}"</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
 

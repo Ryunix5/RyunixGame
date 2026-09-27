@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@ryunix/shared": "file:../shared",
+        "buffer": "^6.0.3",
         "clsx": "^2.1.1",
         "events": "^3.3.0",
         "framer-motion": "^11.18.2",

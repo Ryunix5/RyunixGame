@@ -2,6 +2,7 @@ import { Player } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState, HIDDEN, SYSTEM_SENDER } from '../GamePlugin';
 import { GAME_TIMING } from '../../constants';
 import { packageLoader } from '../../services/PackageLoader';
+import { cleanText } from '../gameUtils';
 
 interface TheLastWordState extends GameState {
     lives: { [playerId: string]: number };
@@ -81,7 +82,7 @@ export class TheLastWordGame implements GamePlugin {
         // ACTION: SET_TOPIC
         if (action.type === 'set_topic') {
             if (state.phase === 'THINKING') return null;
-            state.currentTopic = action.topic || this.getRandomTopic(state);
+            state.currentTopic = cleanText(action.topic) ?? this.getRandomTopic(state);
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
@@ -119,14 +120,15 @@ export class TheLastWordGame implements GamePlugin {
         // ACTION: SUBMIT_ANSWER
         if (action.type === 'submit_answer') {
             if (state.challenge?.active) return null;
-            if (!action.text || typeof action.text !== 'string') return null;
+            const text = cleanText(action.text);
+            if (!text) return null;
             if (state.phase !== 'THINKING') return null; // Only during active round
             if (state.pendingAnswers.some(a => a.playerId === senderId)) return null; // One answer each
 
             // Add to pending (hidden) answers
             state.pendingAnswers.push({
                 playerId: senderId,
-                text: action.text,
+                text,
                 timestamp: Date.now()
             });
 

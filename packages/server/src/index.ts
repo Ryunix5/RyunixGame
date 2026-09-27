@@ -5,7 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { SocketEvents, RoomStatus, Room, SessionInfo } from '@ryunix/shared';
-import { SERVER_CONFIG, ROOM_CONFIG } from './constants';
+import { SERVER_CONFIG, ROOM_CONFIG, SOCKET_RATE_LIMITS, SocketRateCategory, MAX_SOCKET_PAYLOAD_BYTES } from './constants';
+import { RateLimiter } from './utils/rateLimit';
 import { logger } from './utils/logger';
 import { validatePlayerName, validateRoomCode, validateChatMessage, ValidationError } from './utils/validation';
 
@@ -18,9 +19,26 @@ const httpServer = createServer(app);
 // The client is normally served from this same server (and proxied by Vite in dev), so no CORS is
 // needed. Set CORS_ORIGIN (comma-separated) only if the client is hosted on a different origin.
 const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
-const io = new Server(httpServer, allowedOrigins.length > 0
-    ? { cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } }
-    : {});
+const io = new Server(httpServer, {
+    maxHttpBufferSize: MAX_SOCKET_PAYLOAD_BYTES,
+    ...(allowedOrigins.length > 0 ? { cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } } : {})
+});
+
+// Which rate-limit bucket each client event draws from
+const EVENT_RATE_CATEGORY: Record<string, SocketRateCategory> = {
+    [SocketEvents.CREATE_ROOM]: 'lobby',
+    [SocketEvents.JOIN_ROOM]: 'lobby',
+    [SocketEvents.LEAVE_ROOM]: 'lobby',
+    [SocketEvents.KICK_PLAYER]: 'lobby',
+    [SocketEvents.SELECT_GAME]: 'lobby',
+    [SocketEvents.START_GAME]: 'lobby',
+    [SocketEvents.RESET_LOBBY]: 'lobby',
+    [SocketEvents.LIST_ROOMS]: 'lobby',
+    getAvailablePackages: 'lobby',
+    [SocketEvents.GAME_ACTION]: 'game',
+    [SocketEvents.SEND_CHAT]: 'chat',
+    voice_signal: 'voice',
+};
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : SERVER_CONFIG.PORT;
 
@@ -83,6 +101,10 @@ function broadcastRoom(room: Room) {
     }
 }
 
+function isOnline(playerId: string): boolean {
+    return (io.sockets.adapter.rooms.get(playerId)?.size ?? 0) > 0;
+}
+
 // Removes a player from whatever room they are in right now and tells everyone left behind.
 function removeFromCurrentRoom(playerId: string) {
     const current = roomManager.findRoomByPlayer(playerId);
@@ -114,10 +136,26 @@ io.on('connection', (socket) => {
     socket.emit(SocketEvents.SESSION, session satisfies SessionInfo);
     logger.info('Client connected', { socketId: socket.id, playerId });
 
-    // Registers a handler that can't take the server down: non-object payloads become {} and
-    // exceptions are logged instead of crashing the process (one bad message used to kill the server).
+    const limiter = new RateLimiter(SOCKET_RATE_LIMITS);
+    let lastSlowDownNotice = 0;
+    // Drops events beyond this socket's rate limit. Chat gets a visible notice (at most every few
+    // seconds); everything else is dropped silently since normal play never gets near the limits.
+    const withinRateLimit = (event: string): boolean => {
+        const category = EVENT_RATE_CATEGORY[event] ?? 'lobby';
+        if (limiter.allow(category)) return true;
+        const now = Date.now();
+        if (category === 'chat' && now - lastSlowDownNotice > 3000) {
+            lastSlowDownNotice = now;
+            socket.emit(SocketEvents.ERROR, { message: "You're sending messages too fast" });
+        }
+        return false;
+    };
+
+    // Registers a handler that can't take the server down: rate limited, non-object payloads become
+    // {} and exceptions are logged instead of crashing the process (one bad message used to kill it).
     const on = (event: string, handler: (data: any) => void) => {
         socket.on(event, (data: unknown) => {
+            if (!withinRateLimit(event)) return;
             try {
                 handler(data && typeof data === 'object' ? data : {});
             } catch (err) {
@@ -208,7 +246,7 @@ io.on('connection', (socket) => {
 
     // Get available content packages
     socket.on('getAvailablePackages', (callback: unknown) => {
-        if (typeof callback !== 'function') return;
+        if (typeof callback !== 'function' || !withinRateLimit('getAvailablePackages')) return;
         try {
             const packages = packageLoader.loadPackages();
             const summary = packages.map(p => ({
@@ -325,7 +363,7 @@ io.on('connection', (socket) => {
         logger.info('Client disconnected', { socketId: socket.id, playerId });
 
         // Another tab for the same player is still connected
-        if (io.sockets.adapter.rooms.get(playerId)?.size) return;
+        if (isOnline(playerId)) return;
 
         const room = roomManager.markDisconnected(playerId, ROOM_CONFIG.RECONNECT_GRACE_MS, (updated, roomId) => {
             try {
@@ -333,9 +371,11 @@ io.on('connection', (socket) => {
             } catch (err) {
                 logger.error('Failed to remove player after grace period', { playerId, roomId, err });
             }
+            if (!isOnline(playerId)) roomManager.releaseSession(playerId);
             logger.info('Player removed after reconnect grace period', { playerId, roomId });
         });
         if (room) broadcastRoom(room);
+        else roomManager.releaseSession(playerId); // Not in a room: nothing to come back to
     });
 });
 

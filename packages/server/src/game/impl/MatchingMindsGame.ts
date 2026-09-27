@@ -1,5 +1,5 @@
 import { GamePlugin, GameState, HIDDEN } from '../GamePlugin';
-import { Player, MatchingMindsState, MatchingMindsRound } from '@ryunix/shared';
+import { Player, MatchingMindsState, MatchingMindsRound, INPUT_LIMITS } from '@ryunix/shared';
 import { logger } from '../../utils/logger';
 
 /**
@@ -76,7 +76,7 @@ export class MatchingMindsGame implements GamePlugin {
 
         // Validate and sanitize word
         const sanitizedWord = word.trim().toLowerCase();
-        if (!sanitizedWord || sanitizedWord.length > 50) {
+        if (!sanitizedWord || sanitizedWord.length > INPUT_LIMITS.MATCHING_WORD) {
             logger.warn('Invalid word submission', { playerId, word });
             return null;
         }

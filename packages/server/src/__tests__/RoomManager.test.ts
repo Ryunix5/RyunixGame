@@ -24,6 +24,19 @@ describe('RoomManager', () => {
             const first = rm.resolveSession(undefined);
             expect(rm.resolveSession(first.sessionToken)).toEqual(first);
         });
+
+        it('forgets released sessions, but never one whose player still has a seat', () => {
+            const lobbyOnly = rm.resolveSession(undefined);
+            const seated = rm.resolveSession(undefined);
+            rm.createRoom(seated.playerId, 'Seated');
+
+            rm.releaseSession(lobbyOnly.playerId);
+            rm.releaseSession(seated.playerId);
+
+            expect(rm.sessionCount).toBe(1);
+            expect(rm.resolveSession(lobbyOnly.sessionToken).playerId).not.toBe(lobbyOnly.playerId);
+            expect(rm.resolveSession(seated.sessionToken).playerId).toBe(seated.playerId);
+        });
     });
 
     it('keeps a disconnected player seated during the grace period and restores them', () => {

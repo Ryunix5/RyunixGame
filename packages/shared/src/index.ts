@@ -93,3 +93,11 @@ export interface ChatMessage {
     content: string;
     timestamp: number;
 }
+
+// Longest text a player may type, enforced by the server and mirrored by client inputs
+export const INPUT_LIMITS = {
+    GAME_TEXT: 60, // Words, answers, guesses, topics
+    LETTER: 200, // The Prisoners' Letter
+    MATCHING_WORD: 50, // Matching Minds
+    CHAT: 500,
+} as const;

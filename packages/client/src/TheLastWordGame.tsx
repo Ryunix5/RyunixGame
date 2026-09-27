@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSocket } from './SocketContext';
 import { useAudio } from './AudioContext';
-import { SocketEvents } from '@ryunix/shared';
+import { SocketEvents, INPUT_LIMITS } from '@ryunix/shared';
 
 // Mirrors backend state
 interface TheLastWordState {
@@ -135,6 +135,7 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
                     {isHost && gameState.phase !== 'THINKING' && (
                         <div className="flex gap-2 mt-2">
                             <input
+                                maxLength={INPUT_LIMITS.GAME_TEXT}
                                 value={topicInput}
                                 onChange={(e) => setTopicInput(e.target.value)}
                                 placeholder="Set new topic..."
@@ -269,6 +270,7 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
                     {/* Input Area */}
                     <div className="mt-4 flex gap-2">
                         <input
+                            maxLength={INPUT_LIMITS.GAME_TEXT}
                             type="text"
                             value={myAnswer}
                             onChange={(e) => setMyAnswer(e.target.value)}

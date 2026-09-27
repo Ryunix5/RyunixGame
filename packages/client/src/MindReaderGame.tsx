@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSocket } from './SocketContext';
-import { SocketEvents } from '@ryunix/shared';
+import { SocketEvents, INPUT_LIMITS } from '@ryunix/shared';
 import { ChatComponent } from './ChatComponent';
 
 interface MindReaderState {
@@ -110,6 +110,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                             <div key={p.id} className="flex items-center gap-4 bg-slate-800 p-4 rounded-lg">
                                                 <span className="font-bold w-1/3 truncate">{p.name}</span>
                                                 <input
+                                                    maxLength={INPUT_LIMITS.GAME_TEXT}
                                                     type="text"
                                                     value={manualWords[p.id] || gameState.words[p.id] || ''}
                                                     onChange={e => assignWord(p.id, e.target.value)}
@@ -177,6 +178,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                         <h4 className="font-bold mb-2">Make a Guess</h4>
                                         <div className="flex gap-2">
                                             <input
+                                                maxLength={INPUT_LIMITS.GAME_TEXT}
                                                 value={guessInput}
                                                 onChange={e => setGuessInput(e.target.value)}
                                                 placeholder="Is it... ?"

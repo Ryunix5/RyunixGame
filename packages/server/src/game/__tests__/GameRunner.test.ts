@@ -167,6 +167,14 @@ describe('GameRunner', () => {
             expect(room.gameState.lives).toEqual({ a: 2, b: 2 });
         });
 
+        it('rejects answers that are too long', () => {
+            const room = makeRoom('a', 'b');
+            runner.start(room, 'the-last-word', {});
+            runner.handleAction(room, 'a', { type: 'set_topic', topic: 'Fruits' });
+            runner.handleAction(room, 'b', { type: 'submit_answer', text: 'x'.repeat(5000) });
+            expect(room.gameState.pendingAnswers).toHaveLength(0);
+        });
+
         it('only lets the host set topics or deduct lives', () => {
             const room = makeRoom('a', 'b');
             runner.start(room, 'the-last-word', {});

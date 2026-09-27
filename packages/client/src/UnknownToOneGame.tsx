@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSocket } from './SocketContext';
-import { SocketEvents } from '@ryunix/shared';
+import { SocketEvents, INPUT_LIMITS } from '@ryunix/shared';
 import { ChatComponent, ChatComponentHandle } from './ChatComponent';
 
 interface UnknownToOneState {
@@ -125,6 +125,7 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                     <h3 className="text-xl font-bold mb-4 text-purple-400">You are the Leader</h3>
                                     <p className="mb-6 text-gray-400">Set the secret word everybody (except one) will know.</p>
                                     <input
+                                        maxLength={INPUT_LIMITS.GAME_TEXT}
                                         value={wordInput}
                                         onChange={e => setWordInput(e.target.value)}
                                         placeholder="e.g. Pineapple"
@@ -208,6 +209,7 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                         <p className="text-gray-400 mb-4">Say a word that proves you know the secret.</p>
                                         <div className="flex gap-2">
                                             <input
+                                                maxLength={INPUT_LIMITS.GAME_TEXT}
                                                 value={turnWordInput}
                                                 onChange={e => setTurnWordInput(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && sayWord()}
@@ -412,6 +414,7 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                                     <div className="space-y-4">
                                         <p className="text-yellow-400 font-bold">Last Chance! Guess the word for +1 Point.</p>
                                         <input
+                                            maxLength={INPUT_LIMITS.GAME_TEXT}
                                             value={guessInput}
                                             onChange={e => setGuessInput(e.target.value)}
                                             className="w-full bg-black border border-gray-600 rounded p-3 text-center text-white"

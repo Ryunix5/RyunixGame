@@ -12,6 +12,7 @@ import { ROOM_CONFIG } from './constants';
 export class RoomManager {
     private rooms: Map<string, Room> = new Map();
     private sessions: Map<string, string> = new Map(); // sessionToken -> playerId
+    private sessionByPlayer: Map<string, string> = new Map(); // playerId -> sessionToken
     private graceTimers: Map<string, NodeJS.Timeout> = new Map(); // playerId -> pending removal
 
     /** Returns the player id for a known token, or issues a new session. */
@@ -22,7 +23,23 @@ export class RoomManager {
         }
         const fresh = { sessionToken: randomBytes(24).toString('base64url'), playerId: randomUUID() };
         this.sessions.set(fresh.sessionToken, fresh.playerId);
+        this.sessionByPlayer.set(fresh.playerId, fresh.sessionToken);
         return fresh;
+    }
+
+    /**
+     * Forgets a player's session so the map doesn't grow forever. Only call this once the player has
+     * no open connection and no seat in a room; if they come back they simply get a new identity.
+     */
+    releaseSession(playerId: string) {
+        if (this.findRoomByPlayer(playerId)) return;
+        const token = this.sessionByPlayer.get(playerId);
+        if (token) this.sessions.delete(token);
+        this.sessionByPlayer.delete(playerId);
+    }
+
+    get sessionCount(): number {
+        return this.sessions.size;
     }
 
     createRoom(hostId: string, hostName: string): Room {

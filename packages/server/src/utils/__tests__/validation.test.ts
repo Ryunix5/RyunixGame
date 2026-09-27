@@ -36,10 +36,8 @@ describe('validation', () => {
             expect(() => validatePlayerName('Test&Name')).toThrow(ValidationError);
         });
 
-        it('should escape HTML to prevent XSS', () => {
-            const result = validatePlayerName('Test');
-            // validator.escape should not modify safe strings
-            expect(result).toBe('Test');
+        it('should return the trimmed name', () => {
+            expect(validatePlayerName('  Test  ')).toBe('Test');
         });
     });
 
@@ -89,10 +87,8 @@ describe('validation', () => {
             expect(() => validateChatMessage(longMessage)).toThrow('500 characters');
         });
 
-        it('should escape HTML to prevent XSS', () => {
-            // validator.escape will escape HTML entities
-            const result = validateChatMessage('Safe message');
-            expect(result).toBe('Safe message');
+        it('should keep punctuation as plain text (the client escapes on render)', () => {
+            expect(validateChatMessage("don't <b>panic</b> & relax")).toBe("don't <b>panic</b> & relax");
         });
     });
 

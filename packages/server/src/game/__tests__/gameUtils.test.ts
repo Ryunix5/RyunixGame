@@ -1,4 +1,4 @@
-import { calculateWinner, updatePlayerWins, handleGameCompletion, GameResults } from '../gameUtils';
+import { calculateWinner, updatePlayerWins, handleGameCompletion, GameResults, cleanText } from '../gameUtils';
 import { Player } from '@ryunix/shared';
 
 describe('gameUtils', () => {
@@ -111,6 +111,20 @@ describe('gameUtils', () => {
 
             expect(winnerId).toBeNull();
             expect(updated[0].roomWins).toBe(0);
+        });
+    });
+
+    describe('cleanText', () => {
+        it('trims valid text', () => {
+            expect(cleanText('  Pizza  ')).toBe('Pizza');
+        });
+
+        it('rejects non-strings, blank and overlong text', () => {
+            expect(cleanText(42)).toBeNull();
+            expect(cleanText(undefined)).toBeNull();
+            expect(cleanText('   ')).toBeNull();
+            expect(cleanText('x'.repeat(61))).toBeNull();
+            expect(cleanText('x'.repeat(61), 100)).toHaveLength(61);
         });
     });
 });

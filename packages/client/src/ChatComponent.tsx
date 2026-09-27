@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useSocket } from './SocketContext';
-import { SocketEvents, ChatMessage } from '@ryunix/shared';
+import { SocketEvents, ChatMessage, INPUT_LIMITS } from '@ryunix/shared';
 
 export interface ChatComponentHandle {
     clearMessages: () => void;
@@ -60,6 +60,7 @@ export const ChatComponent = forwardRef<ChatComponentHandle, { height?: string }
 
             <form onSubmit={handleSend} className="p-2 bg-gray-800 border-t border-gray-700 flex gap-2">
                 <input
+                    maxLength={INPUT_LIMITS.CHAT}
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}

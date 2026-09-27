@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from './SocketContext';
-import { SocketEvents } from '@ryunix/shared';
+import { SocketEvents, INPUT_LIMITS } from '@ryunix/shared';
 import { ChatComponent } from './ChatComponent';
 
 interface PrisonersLetterState {
@@ -87,6 +87,7 @@ export const PrisonersLetterGame: React.FC<{ gameState: PrisonersLetterState }> 
                                 <p className="text-xs text-gray-400 mb-4">Max 10 words. Try to sound like someone else (or yourself)!</p>
 
                                 <textarea
+                                    maxLength={INPUT_LIMITS.LETTER}
                                     value={inputMessage}
                                     onChange={(e) => setInputMessage(e.target.value)}
                                     className="w-full bg-gray-900 border border-gray-700 rounded p-4 text-white mb-4 focus:border-yellow-400 outline-none"

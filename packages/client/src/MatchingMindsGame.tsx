@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSocket } from './SocketContext';
-import { SocketEvents, MatchingMindsState } from '@ryunix/shared';
+import { SocketEvents, MatchingMindsState, INPUT_LIMITS } from '@ryunix/shared';
 
 export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState }) => {
     const { room, socket, playerId } = useSocket();
@@ -52,6 +52,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
                 <div className="w-full max-w-md mb-6">
                     <div className="flex gap-2">
                         <input
+                            maxLength={INPUT_LIMITS.MATCHING_WORD}
                             type="text"
                             value={myWord}
                             onChange={(e) => setMyWord(e.target.value)}

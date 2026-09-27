@@ -1,5 +1,4 @@
-import validator from 'validator';
-import { ROOM_CONFIG, VALIDATION } from '../constants';
+import { ROOM_CONFIG, VALIDATION, CHAT_CONFIG } from '../constants';
 
 /**
  * Input validation utilities
@@ -45,8 +44,7 @@ export function validatePlayerName(name: string): string {
         );
     }
 
-    // Escape HTML to prevent XSS
-    return validator.escape(trimmed);
+    return trimmed;
 }
 
 /**
@@ -88,15 +86,15 @@ export function validateChatMessage(message: string): string {
         throw new ValidationError('Message cannot be empty');
     }
 
-    // Import CHAT_CONFIG dynamically to avoid circular dependency issues
-    const maxLength = 500; // From CHAT_CONFIG.MAX_MESSAGE_LENGTH
+    const maxLength = CHAT_CONFIG.MAX_MESSAGE_LENGTH;
 
     if (trimmed.length > maxLength) {
         throw new ValidationError(`Message must be ${maxLength} characters or less`);
     }
 
-    // Escape HTML to prevent XSS
-    return validator.escape(trimmed);
+    // Returned as plain text, not HTML-escaped: React escapes on render, and escaping here too
+    // made messages like "don't" show up as "don&#x27;t".
+    return trimmed;
 }
 
 /**

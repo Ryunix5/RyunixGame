@@ -1,5 +1,7 @@
 import { Player } from '@ryunix/shared';
 import { GamePlugin, GameState, maskRecord } from '../GamePlugin';
+import { cleanText } from '../gameUtils';
+import { GAME_INPUT } from '../../constants';
 
 interface PrisonersLetterState extends GameState {
     round: number;
@@ -53,10 +55,10 @@ export class PrisonersLetterGame implements GamePlugin {
 
         if (state.phase === 'WRITING') {
             if (action.type === 'submit_message') {
-                const msg = action.message;
-                if (!msg || typeof msg !== 'string') return null;
+                const msg = cleanText(action.message, GAME_INPUT.MAX_LETTER_LENGTH);
+                if (!msg) return null;
                 // Validate max 10 words
-                if (msg.split(' ').length > 10) return null;
+                if (msg.split(/\s+/).length > 10) return null;
 
                 state.messages[senderId] = msg;
                 if (!state.readyPlayers.includes(senderId)) {

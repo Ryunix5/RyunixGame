@@ -1,3 +1,5 @@
+import { INPUT_LIMITS } from '@ryunix/shared';
+
 /**
  * Application-wide constants
  * Centralizes all magic numbers and configuration values
@@ -36,10 +38,31 @@ export const SERVER_CONFIG = {
 // Chat Configuration
 export const CHAT_CONFIG = {
     /** Maximum length for chat messages */
-    MAX_MESSAGE_LENGTH: 500,
+    MAX_MESSAGE_LENGTH: INPUT_LIMITS.CHAT,
     /** Maximum number of messages to keep in memory per room */
     MAX_MESSAGES_PER_ROOM: 100,
 } as const;
+
+// Per-connection socket rate limits: `capacity` is the burst size, `refillPerSecond` the sustained rate
+export const SOCKET_RATE_LIMITS = {
+    chat: { capacity: 5, refillPerSecond: 1 },
+    game: { capacity: 20, refillPerSecond: 10 },
+    lobby: { capacity: 10, refillPerSecond: 2 },
+    voice: { capacity: 100, refillPerSecond: 50 }, // WebRTC signalling sends bursts of ICE candidates
+} as const;
+
+export type SocketRateCategory = keyof typeof SOCKET_RATE_LIMITS;
+
+// Game Input
+export const GAME_INPUT = {
+    /** Longest free-text value a game accepts (words, answers, guesses) */
+    MAX_TEXT_LENGTH: INPUT_LIMITS.GAME_TEXT,
+    /** Longest letter in The Prisoners' Letter */
+    MAX_LETTER_LENGTH: INPUT_LIMITS.LETTER,
+} as const;
+
+/** Largest socket message a client may send (bytes); everything legitimate is tiny */
+export const MAX_SOCKET_PAYLOAD_BYTES = 16 * 1024;
 
 // Validation Patterns
 export const VALIDATION = {

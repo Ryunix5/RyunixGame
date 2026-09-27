@@ -1,4 +1,5 @@
 import { Player } from '@ryunix/shared';
+import { GAME_INPUT } from '../constants';
 
 /**
  * Game utility functions
@@ -60,4 +61,16 @@ export function handleGameCompletion(
     const updatedPlayers = updatePlayerWins(players, winnerId);
 
     return { players: updatedPlayers, winnerId };
+}
+
+/**
+ * Validates free text a player typed into a game (a word, answer, guess...).
+ * Returns it trimmed, or null if it isn't a non-empty string within `maxLength`.
+ * Everything accepted here gets broadcast to the whole room, hence the cap.
+ */
+export function cleanText(value: unknown, maxLength: number = GAME_INPUT.MAX_TEXT_LENGTH): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || trimmed.length > maxLength) return null;
+    return trimmed;
 }

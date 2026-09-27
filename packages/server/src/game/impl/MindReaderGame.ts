@@ -1,6 +1,7 @@
 import { Player } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState, PlayerViewContext } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
+import { cleanText } from '../gameUtils';
 
 interface MindReaderState extends GameState {
     phase: 'SETUP' | 'PLAYING' | 'GAME_OVER';
@@ -67,8 +68,9 @@ export class MindReaderGame implements GamePlugin {
             }
 
             if (action.type === 'assign_word') {
-                if (state.setupMode === 'MANUAL' && action.targetId in state.scores && typeof action.word === 'string') {
-                    state.words[action.targetId] = action.word;
+                const word = cleanText(action.word);
+                if (state.setupMode === 'MANUAL' && action.targetId in state.scores && word) {
+                    state.words[action.targetId] = word;
                     return state;
                 }
             }
@@ -79,8 +81,9 @@ export class MindReaderGame implements GamePlugin {
         }
 
         if (state.phase === 'PLAYING') {
-            if (action.type === 'submit_guess' && typeof action.guess === 'string') {
-                return this.handleGuess(state, senderId, action.guess);
+            const guess = cleanText(action.guess);
+            if (action.type === 'submit_guess' && guess) {
+                return this.handleGuess(state, senderId, guess);
             }
         }
 

@@ -1,6 +1,7 @@
 import { Player } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
+import { cleanText } from '../gameUtils';
 
 interface UnknownToOneState extends GameState {
     round: number;
@@ -72,8 +73,9 @@ export class UnknownToOneGame implements GamePlugin {
             // Only host can set word? Or random leader?
             // "everyone will be informed a specific thing (set by the room leader)"
             // Assuming Host is Room Leader.
-            if (action.type === 'set_word' && typeof action.word === 'string' && action.word.trim()) {
-                state.secretWord = action.word;
+            const word = cleanText(action.word);
+            if (action.type === 'set_word' && word) {
+                state.secretWord = word;
                 this.startRound(state, Object.keys(state.scores));
                 return state;
             }
@@ -90,9 +92,10 @@ export class UnknownToOneGame implements GamePlugin {
         }
 
         if (state.phase === 'DEBATE') {
-            if (action.type === 'say_word' && action.word) {
+            const word = cleanText(action.word);
+            if (action.type === 'say_word' && word) {
                 if (senderId !== state.turnOrder[state.currentTurnIndex]) return null;
-                state.playerWords[senderId] = action.word;
+                state.playerWords[senderId] = word;
                 state.currentTurnIndex++;
                 return state;
             }
@@ -133,7 +136,9 @@ export class UnknownToOneGame implements GamePlugin {
             if (senderId !== state.blackenedId) return null;
 
             if (action.type === 'submit_guess') {
-                state.blackenedGuess = action.guess;
+                const guess = cleanText(action.guess);
+                if (!guess) return null;
+                state.blackenedGuess = guess;
                 this.resolveBonus(state);
                 return state;
             }

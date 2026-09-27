@@ -2,6 +2,8 @@
 
 Real-time party games for friends in the same room (or call): create a lobby, share the code, pick a game.
 
+Live at **https://ryunixgame.onrender.com** (Render).
+
 Games: Split or Steal, The Last Word, Deceiving Cards, The Prisoners' Letter, Unknown to One, Mind Reader, Matching Minds.
 
 ## Running it
@@ -21,6 +23,16 @@ node packages/server/dist/index.js
 ```
 
 The server then serves the built client on port 3001 (`PORT` to change). See `.env.example` for the other settings.
+
+### Deploying on Render
+
+One web service, set up as in `render.yaml`:
+
+- Build command: `npm ci && npm run build`
+- Start command: `npm start`
+- Health check path: `/healthz`
+
+No disk or environment variables are needed (Render sets `PORT`). Rooms live in memory, so they end when the service restarts or the free instance goes to sleep.
 
 Tests: `npm test --workspace=@ryunix/server` and `npm test --workspace=@ryunix/client`.
 

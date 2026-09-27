@@ -8,7 +8,6 @@ import { SocketEvents, RoomStatus, Room, SessionInfo } from '@ryunix/shared';
 import { SERVER_CONFIG, ROOM_CONFIG } from './constants';
 import { logger } from './utils/logger';
 import { validatePlayerName, validateRoomCode, validateChatMessage, ValidationError } from './utils/validation';
-import { apiLimiter } from './middleware/rateLimiter';
 
 // Load environment variables
 dotenv.config();
@@ -16,26 +15,18 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// CORS configuration - allow development origins
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
-// Always allow localhost:3000 and localhost:5173 in development
-if (process.env.NODE_ENV === 'development') {
-    allowedOrigins.push('http://localhost:3000', 'http://localhost:5173');
-}
-const io = new Server(httpServer, {
-    cors: {
-        origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
-        methods: ["GET", "POST"],
-        credentials: true
-    }
-});
+// The client is normally served from this same server (and proxied by Vite in dev), so no CORS is
+// needed. Set CORS_ORIGIN (comma-separated) only if the client is hosted on a different origin.
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
+const io = new Server(httpServer, allowedOrigins.length > 0
+    ? { cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } }
+    : {});
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : SERVER_CONFIG.PORT;
 
 import { RoomManager } from './RoomManager';
 import { GameRegistry } from './game/GameRegistry';
 import { GameRunner } from './game/GameRunner';
-import { ContentManager } from './services/ContentManager';
 import { packageLoader } from './services/PackageLoader';
 
 // Game Implementations
@@ -49,12 +40,7 @@ import { MatchingMindsGame } from './game/impl/MatchingMindsGame';
 
 const roomManager = new RoomManager();
 const gameRegistry = new GameRegistry();
-const contentManager = new ContentManager();
 const gameRunner = new GameRunner(gameRegistry, room => broadcastRoom(room));
-
-// Apply rate limiting to API routes
-app.use('/api/', apiLimiter);
-app.use(express.json());
 
 // Serve static frontend files
 const clientDist = path.join(__dirname, '../../client/dist');
@@ -62,33 +48,14 @@ if (fs.existsSync(clientDist)) {
     logger.info('Serving static files from:', { path: clientDist });
     app.use(express.static(clientDist));
 
-    // Handle SPA routing (return index.html for non-API requests)
+    // Handle SPA routing (return index.html for everything except socket.io)
     // using a regex to avoid path-to-regexp "Missing parameter name" error with "*"
-    app.get(/^(?!\/api|\/socket.io).+/, (req, res) => {
+    app.get(/^(?!\/socket.io).+/, (req, res) => {
         res.sendFile(path.join(clientDist, 'index.html'));
     });
 } else {
     logger.warn('Client build not found', { path: clientDist });
 }
-
-app.get('/api/content/:gameType', (req, res) => {
-    try {
-        const content = contentManager.getContent(req.params.gameType);
-        res.json(content);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-app.post('/api/content', (req, res) => {
-    try {
-        const { gameType, packName, data } = req.body;
-        contentManager.saveContent(gameType, packName, data);
-        res.json({ success: true });
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
-    }
-});
 
 // Register Games
 gameRegistry.register(new SplitStealGame());

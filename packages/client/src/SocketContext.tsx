@@ -47,7 +47,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => { inRoomRef.current = room !== null; }, [room]);
 
     useEffect(() => {
-        const serverUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
+        // Same origin by default (Vite proxies /socket.io in dev); VITE_SERVER_URL for a separately hosted server
+        const serverUrl = import.meta.env.VITE_SERVER_URL || '/';
 
         const newSocket = io(serverUrl, {
             // A function so every reconnect sends the latest token the server gave us

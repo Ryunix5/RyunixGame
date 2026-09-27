@@ -17,9 +17,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
+      // Same-origin in dev too, so the server needs no CORS setup
+      '/socket.io': {
         target: 'http://localhost:3001',
-        changeOrigin: true
+        ws: true
       }
     }
   }

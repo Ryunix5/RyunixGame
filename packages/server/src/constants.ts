@@ -31,8 +31,6 @@ export const GAME_TIMING = {
 export const SERVER_CONFIG = {
     /** Server port */
     PORT: 3001,
-    /** Default CORS origin for development */
-    DEFAULT_CORS_ORIGIN: 'http://localhost:5173',
 } as const;
 
 // Chat Configuration
@@ -41,18 +39,6 @@ export const CHAT_CONFIG = {
     MAX_MESSAGE_LENGTH: 500,
     /** Maximum number of messages to keep in memory per room */
     MAX_MESSAGES_PER_ROOM: 100,
-} as const;
-
-// Rate Limiting
-export const RATE_LIMITS = {
-    /** Maximum API requests per window */
-    API_MAX_REQUESTS: 100,
-    /** Rate limit window duration (ms) */
-    API_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    /** Maximum socket connections per IP per window */
-    SOCKET_MAX_CONNECTIONS: 10,
-    /** Socket connection window duration (ms) */
-    SOCKET_WINDOW_MS: 60 * 1000, // 1 minute
 } as const;
 
 // Validation Patterns

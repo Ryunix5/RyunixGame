@@ -108,8 +108,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
 
         newSocket.on(SocketEvents.KICKED, () => {
-            alert('You have been kicked by the host.');
             setRoom(null);
+            showToast('You were removed from the room by the host.', 'warning');
         });
 
         return () => {

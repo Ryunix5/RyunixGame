@@ -101,3 +101,30 @@ export const INPUT_LIMITS = {
     MATCHING_WORD: 50, // Matching Minds
     CHAT: 500,
 } as const;
+
+// ==================== GAME CATALOG ====================
+// Single source of truth for what the lobby shows. Each server GamePlugin must use the same id and
+// player limits (a server test checks this).
+
+export interface GameInfo {
+    id: string;
+    name: string;
+    description: string;
+    minPlayers: number;
+    maxPlayers: number;
+    usesContentPacks: boolean; // Whether the host's content pack choice affects this game
+}
+
+export const GAME_CATALOG: readonly GameInfo[] = [
+    { id: 'split-steal', name: 'Split or Steal', description: 'Pair up and secretly choose: share the points or take them all.', minPlayers: 2, maxPlayers: 8, usesContentPacks: false },
+    { id: 'unknown-to-one', name: 'Unknown to One', description: 'Everyone knows the secret word except one player. Find them.', minPlayers: 3, maxPlayers: 10, usesContentPacks: true },
+    { id: 'the-last-word', name: 'The Last Word', description: 'Name something in the topic before time runs out. Last one standing wins.', minPlayers: 2, maxPlayers: 16, usesContentPacks: true },
+    { id: 'prisoners-letter', name: "The Prisoners' Letter", description: 'Write an anonymous note, then guess who wrote the one read out.', minPlayers: 3, maxPlayers: 10, usesContentPacks: false },
+    { id: 'deceiving-cards', name: 'Deceiving Cards', description: "You see everyone's card but your own. Guess yours to survive.", minPlayers: 3, maxPlayers: 10, usesContentPacks: false },
+    { id: 'mind-reader', name: 'Mind Reader', description: "Guess your partner's secret word.", minPlayers: 2, maxPlayers: 10, usesContentPacks: true },
+    { id: 'matching-minds', name: 'Matching Minds', description: 'Everyone says a word each round until you all say the same one.', minPlayers: 2, maxPlayers: 8, usesContentPacks: false },
+];
+
+export function getGameInfo(id: string): GameInfo | undefined {
+    return GAME_CATALOG.find(g => g.id === id);
+}

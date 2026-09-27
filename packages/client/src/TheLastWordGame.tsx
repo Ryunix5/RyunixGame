@@ -124,16 +124,16 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     // const timeLeft = Math.max(0, Math.ceil(((gameState.timerEndTime || 0) - Date.now()) / 1000));
 
     return (
-        <div className="flex flex-col items-center w-full bg-gray-900 p-6 rounded-xl border border-gray-700 h-[600px]">
+        <div className="flex flex-col items-center w-full bg-gray-900 p-3 md:p-6 rounded-xl border border-gray-700 h-[600px]">
             {/* Header */}
-            <div className="w-full flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
-                <div className="flex flex-col gap-2 flex-1">
+            <div className="w-full flex justify-between items-start gap-3 border-b border-gray-700 pb-4 mb-4">
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
                     <h2 className="text-xl font-bold text-gray-400 uppercase tracking-widest">Topic</h2>
-                    <span className="text-3xl font-black text-cyan-400">{gameState.currentTopic}</span>
+                    <span className="text-2xl md:text-3xl font-black text-cyan-400 break-words">{gameState.currentTopic}</span>
 
                     {/* Host - New Topic Input */}
                     {isHost && gameState.phase !== 'THINKING' && (
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                             <input
                                 maxLength={INPUT_LIMITS.GAME_TEXT}
                                 value={topicInput}
@@ -164,7 +164,7 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
             <div className="flex-1 w-full flex gap-4 overflow-hidden relative">
 
                 {/* Players List / Lives */}
-                <div className="w-48 flex flex-col gap-2 overflow-y-auto pr-2 border-r border-gray-700">
+                <div className="w-24 sm:w-48 shrink-0 flex flex-col gap-2 overflow-y-auto pr-2 border-r border-gray-700">
                     <h3 className="text-xs text-gray-500 font-bold uppercase">Players</h3>
                     {room.players.map(p => {
                         return (

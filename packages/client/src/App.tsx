@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, MotionConfig } from 'framer-motion';
 import { SocketProvider, useSocket } from './SocketContext';
 import { VoiceProvider } from './VoiceContext';
 import { AudioProvider } from './AudioContext';
@@ -16,7 +16,7 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 const AppContent: React.FC = () => {
     const { room, connectionStatus, reconnectAttempts } = useSocket();
     return (
-        <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative">
+        <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative overflow-x-hidden">
             <AnimatedBackground />
             <AudioControl />
             <ReconnectionBanner status={connectionStatus} retryCount={reconnectAttempts} />
@@ -45,6 +45,8 @@ const AppContent: React.FC = () => {
 function App() {
     return (
         <ErrorBoundary>
+            {/* Skip transform/layout animations for people who've asked their OS for reduced motion */}
+            <MotionConfig reducedMotion="user">
             <ToastProvider>
                 <SocketProvider>
                     <VoiceProvider>
@@ -54,6 +56,7 @@ function App() {
                     </VoiceProvider>
                 </SocketProvider>
             </ToastProvider>
+            </MotionConfig>
         </ErrorBoundary>
     );
 }

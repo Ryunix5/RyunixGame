@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSocket } from './SocketContext';
 import { useAudio } from './AudioContext';
-import { RoomStatus, SocketEvents } from '@ryunix/shared';
+import { RoomStatus, SocketEvents, GAME_CATALOG, getGameInfo } from '@ryunix/shared';
 import { SplitStealGameComponent } from './SplitStealGame';
 import { TheLastWordGame } from './TheLastWordGame';
 import { BlindShapesGame } from './BlindShapesGame';
@@ -16,33 +16,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from './VoiceContext';
 import { PackageSelector } from './components/PackageSelector';
 
-const GAMES = [
-    { id: 'split-steal', name: 'Split or Steal', desc: 'Trust and betrayal.', players: '2' },
-    { id: 'mind-reader', name: 'Mind Reader', desc: 'Guess the secret word.', players: '2' },
-    { id: 'matching-minds', name: 'Matching Minds', desc: 'Sync your thinking!', players: '2-8' },
-    { id: 'the-last-word', name: 'The Last Word', desc: 'Word chain game.', players: '2-10' },
-    { id: 'deceiving-cards', name: 'Deceiving Cards', desc: 'Find the odd one out.', players: '3-8' },
-    { id: 'prisoners-letter', name: 'Prisoners\' Letter', desc: 'Collaborative writing.', players: '2-6' },
-    { id: 'unknown-to-one', name: 'Unknown to One', desc: 'Social deduction.', players: '3-8' }
-];
-
 const VoiceControls: React.FC = () => {
     const { joined, joinVoice, leaveVoice, isMuted, toggleMute } = useVoice();
 
     if (!joined) {
         return (
-            <Button size="lg" className="pixel-btn px-6 text-xl" onClick={joinVoice}>
+            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl" onClick={joinVoice}>
                 &gt; JOIN VOICE_CHAT
             </Button>
         );
     }
 
     return (
-        <div className="flex gap-4">
-            <Button size="lg" className="pixel-btn px-6 text-xl" onClick={toggleMute}>
+        <div className="flex flex-wrap gap-2 md:gap-4">
+            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl" onClick={toggleMute}>
                 {isMuted ? 'UNMUTE_MIC' : 'MUTE_MIC'}
             </Button>
-            <Button size="lg" className="pixel-btn px-6 text-xl bg-red-900 border-red-500" onClick={leaveVoice}>
+            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl bg-red-900 border-red-500" onClick={leaveVoice}>
                 DISCONNECT_VOICE
             </Button>
         </div>
@@ -83,19 +73,22 @@ export const RoomView: React.FC = () => {
         socket.emit(SocketEvents.SELECT_GAME, { roomId: room.id, gameId });
     };
 
+    const selectedInfo = getGameInfo(selectedGame);
+    const playerCount = room.players.length;
+    const playerRange = (min: number, max: number) => {
+        const cappedMax = Math.min(max, room.maxPlayers);
+        return min === cappedMax ? `${min}` : `${min}-${cappedMax}`;
+    };
+    // Mirrors the server's check so the host sees why they can't start yet
+    const startBlockedReason = !selectedInfo ? 'Pick a game'
+        : playerCount < selectedInfo.minPlayers ? `Needs at least ${selectedInfo.minPlayers} players (${playerCount} here)`
+        : playerCount > selectedInfo.maxPlayers ? `Allows at most ${selectedInfo.maxPlayers} players`
+        : null;
+
     const startGame = () => {
-        console.log('[Client] Start Game clicked');
-        if (!socket) {
-            console.error('[Client] Socket not connected');
-            alert('Error: Not connected to server');
-            return;
-        }
-        if (!isHost) {
-            console.error('[Client] Not host');
-            return;
-        }
-        console.log(`[Client] Emitting START_GAME. Room: ${room.id}, Game: ${selectedGame}, Package: ${selectedPackageId}`);
-        socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId: selectedPackageId });
+        if (!socket || !isHost || startBlockedReason) return;
+        const packageId = selectedInfo?.usesContentPacks ? selectedPackageId : undefined;
+        socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId });
     };
 
     const handleKick = (playerId: string) => {
@@ -106,11 +99,11 @@ export const RoomView: React.FC = () => {
     };
 
     const renderLobby = () => (
-        <div className="w-full max-w-screen-2xl mx-auto p-8 ani-fade-in flex flex-col gap-12">
+        <div className="w-full max-w-screen-2xl mx-auto p-4 md:p-8 ani-fade-in flex flex-col gap-8 md:gap-12">
             {/* RPG Header */}
-            <div className="flex justify-between items-end pb-6 mb-8 lg:p-6 lg:bg-[#151515] lg:border-4 lg:border-white lg:shadow-[8px_8px_0_0_#00e5ff] lg:rounded-none border-b-4 border-slate-800">
-                <div>
-                    <h1 className="text-4xl font-pixel tracking-tight text-white mb-4 uppercase neon-text-cyan">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 pb-6 md:mb-8 lg:p-6 lg:bg-[#151515] lg:border-4 lg:border-white lg:shadow-[8px_8px_0_0_#00e5ff] lg:rounded-none border-b-4 border-slate-800">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl md:text-4xl font-pixel tracking-tight text-white mb-4 uppercase neon-text-cyan break-words">
                         LOBBY_TERMINAL
                     </h1>
                     <div className="flex items-center gap-3">
@@ -120,19 +113,19 @@ export const RoomView: React.FC = () => {
                         </span>
                     </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-2 md:gap-4">
                     <VoiceControls />
-                    <Button size="lg" className="pixel-btn px-6 text-xl bg-red-900 border-red-500" onClick={leaveRoom}>
+                    <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl bg-red-900 border-red-500" onClick={leaveRoom}>
                         EXIT_LOBBY
                     </Button>
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-12 w-full mx-auto">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full mx-auto">
                 {/* Game Selection Pane */}
                 <div className="lg:w-2/3 space-y-8 lg:pixel-box lg:p-8">
-                    <div className="flex justify-between items-end border-b-4 border-slate-800 pb-4">
-                        <h2 className="text-2xl font-pixel text-[#00e5ff] uppercase tracking-widest">
+                    <div className="flex flex-wrap gap-2 justify-between items-end border-b-4 border-slate-800 pb-4">
+                        <h2 className="text-lg md:text-2xl font-pixel text-[#00e5ff] uppercase tracking-widest">
                             &gt; SELECT_QUEST
                         </h2>
                         {!isHost && (
@@ -143,7 +136,7 @@ export const RoomView: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {GAMES.map(game => (
+                        {GAME_CATALOG.map(game => (
                             <div
                                 key={game.id}
                                 onClick={() => isHost && handleSelectGame(game.id)}
@@ -155,15 +148,15 @@ export const RoomView: React.FC = () => {
                                     ${isHost ? 'cursor-pointer hover:bg-black' : 'cursor-default opacity-80'}
                                 `}
                             >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className={`font-pixel text-lg ${selectedGame === game.id ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
+                                <div className="flex justify-between items-start gap-2 mb-2">
+                                    <h3 className={`font-pixel text-base md:text-lg ${selectedGame === game.id ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
                                         {game.name}
                                     </h3>
-                                    <span className="text-lg font-sans font-bold bg-white text-black px-2">
-                                        {game.players}P
+                                    <span className="text-lg font-sans font-bold bg-white text-black px-2 whitespace-nowrap">
+                                        {playerRange(game.minPlayers, game.maxPlayers)}P
                                     </span>
                                 </div>
-                                <p className="text-lg font-sans text-slate-300 font-bold">{game.desc}</p>
+                                <p className="text-lg font-sans text-slate-300 font-bold">{game.description}</p>
                                 
                                 {selectedGame === game.id && (
                                     <div className="absolute top-0 left-0 w-2 h-full bg-[#ff007f]" />
@@ -173,7 +166,7 @@ export const RoomView: React.FC = () => {
                     </div>
 
                     {/* Package Selection */}
-                    {isHost && selectedGame !== 'matching-minds' && (
+                    {isHost && selectedInfo?.usesContentPacks && (
                         <div className="w-full mt-8 p-4 border-4 border-slate-800 bg-black">
                             <PackageSelector
                                 selectedPackageId={selectedPackageId}
@@ -183,10 +176,18 @@ export const RoomView: React.FC = () => {
                     )}
 
                     {isHost && (
-                        <div className="flex justify-end pt-8">
-                            <Button size="lg" onClick={startGame} className="pixel-btn px-12 h-16 text-2xl w-full md:w-auto">
+                        <div className="flex flex-col items-stretch md:items-end gap-2 pt-8">
+                            <Button
+                                size="lg"
+                                onClick={startGame}
+                                disabled={!!startBlockedReason}
+                                className="pixel-btn px-12 h-16 text-2xl w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 START_ADVENTURE
                             </Button>
+                            {startBlockedReason && (
+                                <span className="text-lg font-sans text-[#ff007f] text-center md:text-right">{startBlockedReason}</span>
+                            )}
                         </div>
                     )}
                 </div>
@@ -219,10 +220,10 @@ export const RoomView: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="w-full max-w-screen-2xl mx-auto lg:p-12 lg:pixel-box lg:shadow-[12px_12px_0_0_#ff007f] min-h-[80vh] flex flex-col"
             >
-                <div className="flex justify-between items-center mb-8 pb-4 border-b-4 border-slate-800">
+                <div className="flex flex-wrap gap-4 justify-between items-center mb-8 pb-4 border-b-4 border-slate-800">
                     <div className="flex items-center gap-4">
                         <span className="w-4 h-4 bg-[#00e5ff] animate-ping" />
-                        <span className="text-xl font-pixel text-[#00e5ff] uppercase tracking-widest">&gt; COMBAT_ENGAGED</span>
+                        <span className="text-sm md:text-xl font-pixel text-[#00e5ff] uppercase tracking-widest">&gt; COMBAT_ENGAGED</span>
                     </div>
                     <Button onClick={leaveRoom} className="pixel-btn bg-red-900 border-red-500 text-xl px-6">
                         FLEE_BATTLE
@@ -237,10 +238,7 @@ export const RoomView: React.FC = () => {
                 {room.gameState?.type === 'mind-reader' && <MindReaderGame gameState={room.gameState as any} />}
                 {room.gameState?.type === 'matching-minds' && <MatchingMindsGame gameState={room.gameState as any} />}
 
-                {![
-                    'split-steal', 'the-last-word', 'deceiving-cards',
-                    'prisoners-letter', 'unknown-to-one', 'mind-reader', 'matching-minds'
-                ].includes(room.gameState?.type || '') && (
+                {!getGameInfo(room.gameState?.type || '') && (
                         <div className="text-center p-12 border border-red-900 bg-red-900/10 rounded">
                             <h2 className="text-xl font-bold text-red-500 mb-2">ERROR</h2>
                             <p className="text-red-400">Unknown game type: {room.gameState?.type}</p>

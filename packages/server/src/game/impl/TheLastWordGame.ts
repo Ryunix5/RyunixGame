@@ -1,5 +1,6 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState, HIDDEN } from '../GamePlugin';
+import { GameContext, GamePlugin, GameState, HIDDEN, SYSTEM_SENDER } from '../GamePlugin';
+import { GAME_TIMING } from '../../constants';
 import { packageLoader } from '../../services/PackageLoader';
 
 interface TheLastWordState extends GameState {
@@ -45,10 +46,7 @@ export class TheLastWordGame implements GamePlugin {
             ;
     }
 
-    private emitState?: (state: TheLastWordState) => void;
-
-    setup(players: Player[], config?: any, emitState?: (state: any) => void): TheLastWordState {
-        this.emitState = emitState;
+    setup(players: Player[], config?: any): TheLastWordState {
         const lives: { [id: string]: number } = {};
         players.forEach(p => lives[p.id] = 3); // 3 Lives
 
@@ -61,7 +59,8 @@ export class TheLastWordGame implements GamePlugin {
             round: 1,
             phase: 'SETUP', // SETUP -> THINKING -> REVIEW
             pendingAnswers: [],
-            selectedPackages: ['general', 'pop-culture', 'geography', 'food'] // All by default
+            selectedPackages: ['general', 'pop-culture', 'geography', 'food'], // All by default
+            packageId: config?.packageId
         } as TheLastWordState;
     }
 
@@ -73,47 +72,38 @@ export class TheLastWordGame implements GamePlugin {
         };
     }
 
-    handleAction(state: TheLastWordState, senderId: string, action: any, dispatch?: (s: any) => void): TheLastWordState | null {
+    handleAction(state: TheLastWordState, senderId: string, action: any, ctx: GameContext): TheLastWordState | null {
         if (state.winner) return null;
 
-        // ACTION: SET_TOPIC (Host Only - enforced by UI, assumed valid here)
+        const hostOnly = ['set_topic', 'judge_challenge', 'deduct_life'];
+        if (hostOnly.includes(action.type) && senderId !== ctx.hostId) return null;
+
+        // ACTION: SET_TOPIC
         if (action.type === 'set_topic') {
+            if (state.phase === 'THINKING') return null;
             state.currentTopic = action.topic || this.getRandomTopic(state);
             state.answers = []; // Reset answers on new topic
             state.round++;
             state.challenge = null;
             state.phase = 'THINKING'; // Enable input for players
 
-            // Set 5-second timer - deduct life from players who don't answer
-            state.timerEndTime = Date.now() + 5000;
-            const answeredPlayers = new Set<string>();
+            // Anyone who hasn't answered when the timer runs out loses a life
+            state.timerEndTime = Date.now() + GAME_TIMING.THINKING_PHASE_DURATION;
+            ctx.schedule(GAME_TIMING.THINKING_PHASE_DURATION, { type: 'thinking_timeout', round: state.round });
+            return state;
+        }
 
-            setTimeout(() => {
-                // If already in REVIEW (all players submitted early), don't clear answers
-                if (state.phase === 'REVIEW') {
-                    return;
+        if (action.type === 'thinking_timeout') {
+            // Ignore timers from an earlier round or ones that finished early because everyone answered
+            if (senderId !== SYSTEM_SENDER || state.phase !== 'THINKING' || action.round !== state.round) return null;
+
+            const answered = new Set(state.pendingAnswers.map(a => a.playerId));
+            Object.keys(state.lives).forEach(pid => {
+                if (state.lives[pid] > 0 && !answered.has(pid)) {
+                    state.lives[pid]--;
                 }
-
-                // Reveal pending answers when timer expires
-                state.answers = [...state.pendingAnswers];
-                state.pendingAnswers = [];
-
-                // Collect who answered
-                const answeredPlayers = new Set<string>();
-                state.answers.forEach(a => answeredPlayers.add(a.playerId));
-
-                // Deduct life from non-responders
-                Object.keys(state.lives).forEach(pid => {
-                    if (state.lives[pid] > 0 && !answeredPlayers.has(pid)) {
-                        state.lives[pid]--;
-                    }
-                });
-
-                state.phase = 'REVIEW';
-                delete state.timerEndTime;
-                if (dispatch) dispatch(state);
-            }, 5000);
-
+            });
+            this.endThinkingPhase(state);
             return state;
         }
 
@@ -129,8 +119,9 @@ export class TheLastWordGame implements GamePlugin {
         // ACTION: SUBMIT_ANSWER
         if (action.type === 'submit_answer') {
             if (state.challenge?.active) return null;
-            if (!action.text) return null;
+            if (!action.text || typeof action.text !== 'string') return null;
             if (state.phase !== 'THINKING') return null; // Only during active round
+            if (state.pendingAnswers.some(a => a.playerId === senderId)) return null; // One answer each
 
             // Add to pending (hidden) answers
             state.pendingAnswers.push({
@@ -139,21 +130,7 @@ export class TheLastWordGame implements GamePlugin {
                 timestamp: Date.now()
             });
 
-            // Check if all alive players have submitted
-            const alivePlayers = Object.entries(state.lives)
-                .filter(([_, lives]) => lives > 0)
-                .map(([id]) => id);
-
-            const submittedPlayers = new Set(state.pendingAnswers.map(a => a.playerId));
-
-            // If all alive players submitted, reveal answers
-            if (alivePlayers.every(id => submittedPlayers.has(id))) {
-                state.answers = [...state.pendingAnswers];
-                state.pendingAnswers = [];
-                state.phase = 'REVIEW';
-                delete state.timerEndTime;
-            }
-
+            this.endThinkingIfAllAnswered(state);
             return state;
         }
 
@@ -208,21 +185,27 @@ export class TheLastWordGame implements GamePlugin {
         return state;
     }
 
-    private resolveChallenge(state: TheLastWordState) {
-        // Deprecated
+    onPlayerLeave(state: TheLastWordState, playerId: string): TheLastWordState {
+        delete state.lives[playerId];
+        state.pendingAnswers = state.pendingAnswers.filter(a => a.playerId !== playerId);
+        if (state.challenge && (state.challenge.challengerId === playerId || state.challenge.targetId === playerId)) {
+            state.challenge = null;
+        }
+        if (state.phase === 'THINKING') this.endThinkingIfAllAnswered(state);
+        return state;
     }
 
-    private endThinkingPhase(state: TheLastWordState, dispatch?: (s: any) => void) {
-        // Move pending answers to main answers
+    private endThinkingIfAllAnswered(state: TheLastWordState) {
+        const answered = new Set(state.pendingAnswers.map(a => a.playerId));
+        const alive = Object.keys(state.lives).filter(id => state.lives[id] > 0);
+        if (alive.every(id => answered.has(id))) this.endThinkingPhase(state);
+    }
+
+    private endThinkingPhase(state: TheLastWordState) {
         state.answers = [...state.pendingAnswers];
         state.pendingAnswers = [];
         state.phase = 'REVIEW';
         delete state.timerEndTime;
-
-        // Emit updated state
-        if (dispatch) {
-            dispatch(state);
-        }
     }
 
     isComplete(state: TheLastWordState): boolean {

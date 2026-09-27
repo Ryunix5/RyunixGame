@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState, PlayerViewContext } from '../GamePlugin';
+import { GameContext, GamePlugin, GameState, PlayerViewContext } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 
 interface MindReaderState extends GameState {
@@ -57,42 +57,47 @@ export class MindReaderGame implements GamePlugin {
         return { ...state, words };
     }
 
-    handleAction(state: MindReaderState, senderId: string, action: any, dispatch?: (s: any) => void): MindReaderState | null {
-        console.log(`[MindReader] handleAction. Phase: ${state.phase}, Action: ${action.type}, Sender: ${senderId}`);
+    handleAction(state: MindReaderState, senderId: string, action: any, ctx: GameContext): MindReaderState | null {
+        if (state.phase === 'SETUP') {
+            if (senderId !== ctx.hostId) return null; // The host runs setup
 
-        // Clone state (optional but safer) or modify direct if performance needed. 
-        // Following GamePlugin patterns usually implies treating state as mutable or returning new ref.
-        const newState = state; // Direct mutation for simplicity unless deep clone needed.
-
-        if (newState.phase === 'SETUP') {
-            console.log('[MindReader] In SETUP phase');
-            if (action.type === 'set_mode') {
-                newState.setupMode = action.mode;
-                return newState;
+            if (action.type === 'set_mode' && (action.mode === 'AUTO' || action.mode === 'MANUAL')) {
+                state.setupMode = action.mode;
+                return state;
             }
 
             if (action.type === 'assign_word') {
-                if (newState.setupMode === 'MANUAL') {
-                    newState.words[action.targetId] = action.word;
-                    return newState;
+                if (state.setupMode === 'MANUAL' && action.targetId in state.scores && typeof action.word === 'string') {
+                    state.words[action.targetId] = action.word;
+                    return state;
                 }
             }
 
             if (action.type === 'start_game') {
-                console.log('[MindReader] Action is start_game. Starting round...');
-                const playerIds = Object.keys(newState.scores);
-                console.log('[MindReader] Player IDs:', playerIds);
-                return this.startRound(newState, playerIds);
+                return this.startRound(state, Object.keys(state.scores));
             }
         }
 
-        if (newState.phase === 'PLAYING') {
-            if (action.type === 'submit_guess') {
-                return this.handleGuess(newState, senderId, action.guess);
+        if (state.phase === 'PLAYING') {
+            if (action.type === 'submit_guess' && typeof action.guess === 'string') {
+                return this.handleGuess(state, senderId, action.guess);
             }
         }
 
         return null;
+    }
+
+    onPlayerLeave(state: MindReaderState, playerId: string): MindReaderState {
+        delete state.scores[playerId];
+        delete state.words[playerId];
+        delete state.guesses[playerId];
+        // Their partner is left without anyone to read; they sit out
+        state.pairings = state.pairings.filter(p => !p.includes(playerId));
+        if (state.phase === 'PLAYING' && state.pairings.length === 0) {
+            state.phase = 'GAME_OVER';
+            state.winnerIds = [];
+        }
+        return state;
     }
 
     private startRound(state: MindReaderState, playerIds: string[]): MindReaderState {

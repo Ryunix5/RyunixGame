@@ -44,27 +44,36 @@ export class BlindShapesGame implements GamePlugin {
         return { ...state, suits, guesses: maskRecord(state.guesses, viewerId) as BlindShapesState['guesses'] };
     }
 
-    handleAction(state: BlindShapesState, senderId: string, action: any, dispatch?: (s: any) => void): BlindShapesState | null {
+    handleAction(state: BlindShapesState, senderId: string, action: any): BlindShapesState | null {
         if (state.winnerIds) return null;
         if (state.eliminated.includes(senderId)) return null;
 
         // ACTION: GUESS
         if (action.type === 'guess') {
             if (state.guesses[senderId]) return null; // Already guessed this round
+            if (!this.SUITS.includes(action.suit)) return null;
 
             state.guesses[senderId] = action.suit;
-
-            // Check if all active players have guessed
-            const activePlayers = Object.keys(state.suits).filter(id => !state.eliminated.includes(id));
-            const allGuessed = activePlayers.every(id => state.guesses[id]);
-
-            if (allGuessed) {
-                this.resolveRound(state);
-            }
+            this.resolveIfAllGuessed(state);
             return state;
         }
 
         return state;
+    }
+
+    onPlayerLeave(state: BlindShapesState, playerId: string): BlindShapesState {
+        delete state.suits[playerId];
+        delete state.guesses[playerId];
+        state.eliminated = state.eliminated.filter(id => id !== playerId);
+        if (!this.checkWin(state)) this.resolveIfAllGuessed(state);
+        return state;
+    }
+
+    private resolveIfAllGuessed(state: BlindShapesState) {
+        const activePlayers = Object.keys(state.suits).filter(id => !state.eliminated.includes(id));
+        if (activePlayers.every(id => state.guesses[id])) {
+            this.resolveRound(state);
+        }
     }
 
     private resolveRound(state: BlindShapesState) {

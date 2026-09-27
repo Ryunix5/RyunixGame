@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GameContext, GamePlugin, GameState } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 
 interface UnknownToOneState extends GameState {
@@ -64,14 +64,15 @@ export class UnknownToOneGame implements GamePlugin {
         };
     }
 
-    handleAction(state: UnknownToOneState, senderId: string, action: any, dispatch?: (s: any) => void): UnknownToOneState | null {
+    handleAction(state: UnknownToOneState, senderId: string, action: any, ctx: GameContext): UnknownToOneState | null {
         if (state.winnerIds) return null;
 
         if (state.phase === 'SETUP') {
+            if (senderId !== ctx.hostId) return null; // The host picks the word
             // Only host can set word? Or random leader?
             // "everyone will be informed a specific thing (set by the room leader)"
             // Assuming Host is Room Leader.
-            if (action.type === 'set_word' && action.word) {
+            if (action.type === 'set_word' && typeof action.word === 'string' && action.word.trim()) {
                 state.secretWord = action.word;
                 this.startRound(state, Object.keys(state.scores));
                 return state;
@@ -101,13 +102,7 @@ export class UnknownToOneGame implements GamePlugin {
                 if (!state.readyPlayers.includes(senderId)) {
                     state.readyPlayers.push(senderId);
                 }
-
-                const totalPlayers = Object.keys(state.scores).length;
-                if (state.readyPlayers.length >= totalPlayers) {
-                    state.phase = 'DECISION';
-                    state.decisionVotes = {};
-                    state.readyPlayers = [];
-                }
+                this.advanceIfEveryoneDone(state);
                 return state;
             }
         }
@@ -117,29 +112,7 @@ export class UnknownToOneGame implements GamePlugin {
                 if (!state.decisionVotes) state.decisionVotes = {};
                 if (state.decisionVotes[senderId]) return null; // Already voted
                 state.decisionVotes[senderId] = action.choice;
-
-                // Check if all voted
-                const voterCount = Object.keys(state.decisionVotes).length;
-                const totalPlayers = Object.keys(state.scores).length;
-
-                if (voterCount >= totalPlayers) {
-                    let voteNowCount = 0;
-                    let anotherRoundCount = 0;
-                    Object.values(state.decisionVotes).forEach(choice => {
-                        if (choice === 'vote_now') voteNowCount++;
-                        else anotherRoundCount++;
-                    });
-
-                    if (anotherRoundCount > voteNowCount) {
-                        state.phase = 'DEBATE';
-                        state.currentTurnIndex = 0;
-                        state.playerWords = {};
-                        state.decisionVotes = {};
-                    } else {
-                        state.phase = 'VOTING';
-                        state.decisionVotes = {};
-                    }
-                }
+                this.advanceIfEveryoneDone(state);
                 return state;
             }
         }
@@ -148,14 +121,9 @@ export class UnknownToOneGame implements GamePlugin {
             if (action.type === 'vote') {
                 const targetId = action.targetId;
                 if (state.votes[senderId]) return null; // Already voted
+                if (!(targetId in state.scores)) return null; // Must vote for someone in the game
                 state.votes[senderId] = targetId;
-
-                // Check if all voted
-                const voterCount = Object.keys(state.votes).length;
-                const totalPlayers = Object.keys(state.scores).length;
-                if (voterCount >= totalPlayers) {
-                    this.resolveVoting(state);
-                }
+                this.advanceIfEveryoneDone(state);
                 return state;
             }
         }
@@ -195,6 +163,57 @@ export class UnknownToOneGame implements GamePlugin {
         }
 
         return state;
+    }
+
+    onPlayerLeave(state: UnknownToOneState, playerId: string): UnknownToOneState {
+        delete state.scores[playerId];
+        delete state.playerWords[playerId];
+        delete state.votes[playerId];
+        if (state.decisionVotes) delete state.decisionVotes[playerId];
+        state.readyPlayers = state.readyPlayers.filter(id => id !== playerId);
+
+        const turnIdx = state.turnOrder.indexOf(playerId);
+        if (turnIdx !== -1) {
+            state.turnOrder.splice(turnIdx, 1);
+            if (turnIdx < state.currentTurnIndex) state.currentTurnIndex--;
+        }
+
+        const roundInProgress = state.phase !== 'SETUP' && state.phase !== 'REVEAL';
+        if (playerId === state.blackenedId && roundInProgress) {
+            // Nothing left to deduce: void the round and reveal the word
+            state.phase = 'REVEAL';
+        } else {
+            this.advanceIfEveryoneDone(state);
+        }
+        return state;
+    }
+
+    // Moves to the next phase once every remaining player has done what the current phase needs.
+    private advanceIfEveryoneDone(state: UnknownToOneState) {
+        const totalPlayers = Object.keys(state.scores).length;
+
+        if (state.phase === 'DEBATE') {
+            if (state.currentTurnIndex < state.turnOrder.length) return;
+            if (state.readyPlayers.length < totalPlayers) return;
+            state.phase = 'DECISION';
+            state.decisionVotes = {};
+            state.readyPlayers = [];
+        } else if (state.phase === 'DECISION') {
+            const choices = Object.values(state.decisionVotes || {});
+            if (choices.length < totalPlayers) return;
+            const voteNow = choices.filter(c => c === 'vote_now').length;
+            if (choices.length - voteNow > voteNow) {
+                state.phase = 'DEBATE';
+                state.currentTurnIndex = 0;
+                state.playerWords = {};
+            } else {
+                state.phase = 'VOTING';
+            }
+            state.decisionVotes = {};
+        } else if (state.phase === 'VOTING') {
+            if (Object.keys(state.votes).length < totalPlayers) return;
+            this.resolveVoting(state);
+        }
     }
 
     private startRound(state: UnknownToOneState, playerIds: string[]) {

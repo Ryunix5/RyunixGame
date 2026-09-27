@@ -24,7 +24,7 @@ export const GAME_TIMING = {
     /** Room list polling interval (ms) */
     ROOM_LIST_POLL_INTERVAL: 5000,
     /** Thinking phase duration for The Last Word (ms) */
-    THINKING_PHASE_DURATION: 30000,
+    THINKING_PHASE_DURATION: 5000,
 } as const;
 
 // Server Configuration

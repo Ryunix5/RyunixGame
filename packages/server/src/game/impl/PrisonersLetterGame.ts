@@ -48,7 +48,7 @@ export class PrisonersLetterGame implements GamePlugin {
         };
     }
 
-    handleAction(state: PrisonersLetterState, senderId: string, action: any, dispatch?: (s: any) => void): PrisonersLetterState | null {
+    handleAction(state: PrisonersLetterState, senderId: string, action: any): PrisonersLetterState | null {
         if (state.winnerIds) return null;
 
         if (state.phase === 'WRITING') {
@@ -101,6 +101,30 @@ export class PrisonersLetterGame implements GamePlugin {
             }
         }
 
+        return state;
+    }
+
+    onPlayerLeave(state: PrisonersLetterState, playerId: string): PrisonersLetterState {
+        delete state.scores[playerId];
+        delete state.messages[playerId];
+        delete state.votes[playerId];
+        state.readyPlayers = state.readyPlayers.filter(id => id !== playerId);
+
+        if (state.phase === 'VOTING' && state.currentReaderId === playerId) {
+            // The author left mid-vote: read someone else's letter instead
+            state.votes = {};
+            state.currentReaderId = undefined;
+            state.currentMessage = undefined;
+            if (Object.keys(state.messages).length > 0) {
+                this.startRound(state);
+            } else {
+                state.phase = 'WRITING';
+                state.readyPlayers = [];
+            }
+            return state;
+        }
+
+        this.checkPhaseAdvance(state);
         return state;
     }
 

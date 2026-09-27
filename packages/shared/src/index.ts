@@ -68,6 +68,7 @@ export interface MatchingMindsState {
     submissions: Record<string, { word: string; playerName: string }>;
     hasConverged: boolean;
     convergenceWord?: string;
+    playerNames: Record<string, string>; // Players still in the game, id -> name
 }
 
 export interface MatchingMindsRound {

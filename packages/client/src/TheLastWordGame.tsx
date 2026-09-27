@@ -31,7 +31,7 @@ export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) 
     const myId = playerId;
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-    const isHost = room?.players[0]?.id === myId;
+    const isHost = room?.hostId === myId;
     const isAlive = gameState.lives[myId || ''] > 0;
     const myLives = gameState.lives[myId || ''] || 0;
 

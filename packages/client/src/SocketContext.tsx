@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SocketEvents, Room, SessionInfo } from '@ryunix/shared';
 import { RoomSummary } from '@ryunix/shared';
 import { reconnectionManager } from './services/ReconnectionManager';
+import { useToast } from './components/Toast';
 
 interface SocketContextType {
     socket: Socket | null;
@@ -40,6 +41,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [error, setError] = useState<string | null>(null);
     const [reconnectAttempts, setReconnectAttempts] = useState(0);
     const [playerId, setPlayerId] = useState<string | null>(null);
+    const { showToast } = useToast();
+    // The socket listeners are registered once, so they read the current room through a ref
+    const inRoomRef = useRef(false);
+    useEffect(() => { inRoomRef.current = room !== null; }, [room]);
 
     useEffect(() => {
         const serverUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
@@ -97,6 +102,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         newSocket.on(SocketEvents.ERROR, (err: { message: string }) => {
             setError(err.message);
+            // The home screen shows errors inline; inside a room they'd otherwise go unseen
+            if (inRoomRef.current) showToast(err.message, 'error');
         });
 
         newSocket.on(SocketEvents.KICKED, () => {

@@ -17,9 +17,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
             roomId: room.id,
             action: {
                 type: 'submit_word',
-                word: myWord.trim(),
-                playerName: room.players.find(p => p.id === myId)?.name,
-                playerCount: room.players.length
+                word: myWord.trim()
             }
         });
         setMyWord('');

@@ -12,7 +12,7 @@ export class MatchingMindsGame implements GamePlugin {
     minPlayers = 2;
     maxPlayers = 8;
 
-    setup(players: Player[], config?: any, emitState?: (state: GameState) => void): GameState {
+    setup(players: Player[]): GameState {
         logger.info('Setting up Matching Minds', { playerCount: players.length });
 
         const state: MatchingMindsState & GameState = {
@@ -22,7 +22,8 @@ export class MatchingMindsGame implements GamePlugin {
             maxRounds: 15,
             rounds: [],
             submissions: {},
-            hasConverged: false
+            hasConverged: false,
+            playerNames: Object.fromEntries(players.map(p => [p.id, p.name]))
         };
 
         return state;
@@ -38,11 +39,12 @@ export class MatchingMindsGame implements GamePlugin {
         return { ...mmState, submissions };
     }
 
-    handleAction(state: GameState, senderId: string, action: any, dispatch?: (state: GameState) => void): GameState | null {
+    handleAction(state: GameState, senderId: string, action: any): GameState | null {
         const mmState = state as unknown as (MatchingMindsState & GameState);
 
         if (action.type === 'submit_word') {
-            return this.handleSubmitWord(mmState, senderId, action.word, action.playerName, action.playerCount);
+            if (typeof action.word !== 'string') return null;
+            return this.handleSubmitWord(mmState, senderId, action.word);
         } else if (action.type === 'next_round') {
             return this.handleNextRound(mmState);
         }
@@ -50,7 +52,23 @@ export class MatchingMindsGame implements GamePlugin {
         return null;
     }
 
-    private handleSubmitWord(state: MatchingMindsState & GameState, playerId: string, word: string, playerName: string, playerCount: number): GameState | null {
+    onPlayerLeave(state: GameState, playerId: string): GameState {
+        const mmState = state as unknown as (MatchingMindsState & GameState);
+        delete mmState.playerNames[playerId];
+        delete mmState.submissions[playerId];
+        this.revealIfAllSubmitted(mmState);
+        return mmState;
+    }
+
+    private revealIfAllSubmitted(state: MatchingMindsState & GameState) {
+        const playerCount = Object.keys(state.playerNames).length;
+        if (state.phase === 'SUBMITTING' && playerCount > 0 && Object.keys(state.submissions).length >= playerCount) {
+            logger.info('All players submitted - revealing results');
+            this.revealRound(state);
+        }
+    }
+
+    private handleSubmitWord(state: MatchingMindsState & GameState, playerId: string, word: string): GameState | null {
         if (state.phase !== 'SUBMITTING') {
             logger.warn('Invalid submission phase', { playerId, phase: state.phase });
             return null;
@@ -64,15 +82,10 @@ export class MatchingMindsGame implements GamePlugin {
         }
 
         // Store submission
-        state.submissions[playerId] = { word: sanitizedWord, playerName: playerName || playerId };
-        logger.info('Word submitted', { playerId, word: sanitizedWord, total: Object.keys(state.submissions).length, playerCount });
+        state.submissions[playerId] = { word: sanitizedWord, playerName: state.playerNames[playerId] ?? 'Unknown' };
+        logger.info('Word submitted', { playerId, total: Object.keys(state.submissions).length });
 
-        // Check if all players have submitted
-        if (Object.keys(state.submissions).length === playerCount) {
-            logger.info('All players submitted - revealing results');
-            this.revealRound(state);
-        }
-
+        this.revealIfAllSubmitted(state);
         return state;
     }
 

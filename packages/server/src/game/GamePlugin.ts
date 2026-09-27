@@ -12,10 +12,15 @@ export interface GamePlugin {
     minPlayers: number;
     maxPlayers: number;
 
-    setup(players: Player[], config?: any, emitState?: (state: GameState) => void): GameState;
+    setup(players: Player[], config: any, ctx: GameContext): GameState;
 
-    // Returns updated state, or null if invalid action
-    handleAction(state: GameState, senderId: string, action: any, dispatch?: (state: GameState) => void): GameState | null;
+    // Returns updated state, or null if invalid action.
+    // Actions scheduled via ctx.schedule arrive here too, with senderId === SYSTEM_SENDER.
+    handleAction(state: GameState, senderId: string, action: any, ctx: GameContext): GameState | null;
+
+    // Called when a player leaves mid-game for good (left, kicked, or reconnect grace expired).
+    // Remove them from the state so the game doesn't wait on them forever.
+    onPlayerLeave?(state: GameState, playerId: string, ctx: GameContext): GameState;
 
     // Check if game is complete
     isComplete(state: GameState): boolean;
@@ -30,6 +35,19 @@ export interface GamePlugin {
 
 export interface PlayerViewContext {
     hostId: string;
+}
+
+// Sender id used for actions the game scheduled for itself (timers, auto-advance).
+// Players can never have this id, so games can use it to reject actions only the game may trigger.
+export const SYSTEM_SENDER = 'system';
+
+// Per-room services a game gets from the engine. Game plugins are shared singletons, so they
+// must never keep per-room data on `this`; anything per-room goes in state or through here.
+export interface GameContext {
+    hostId: string;
+    // Dispatch `action` back into handleAction after `delayMs`. Pending actions are dropped
+    // automatically if the game ends, the lobby is reset, or the room closes.
+    schedule(delayMs: number, action: any): void;
 }
 
 // Placeholder for values a player knows exist but may not see (e.g. "opponent has decided").

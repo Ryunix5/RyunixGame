@@ -23,7 +23,7 @@ export class ContentManager {
 
         const dbPath = path.join(dataDir, 'content.db');
         console.log('[ContentManager] Initializing DB at:', dbPath);
-        this.db = new Database(dbPath, { verbose: console.log });
+        this.db = new Database(dbPath);
         this.initialize();
     }
 

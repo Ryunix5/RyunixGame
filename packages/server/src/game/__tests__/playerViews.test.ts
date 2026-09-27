@@ -19,20 +19,20 @@ const makePlayers = (...ids: string[]): Player[] => ids.map((id, i) => ({
     connected: true
 }));
 
-const ctx = { hostId: 'a' };
+const ctx = { hostId: 'a', schedule: jest.fn() };
 
 describe('getPlayerView', () => {
     it('Split/Steal hides opponent decisions until reveal', () => {
         const game = new SplitStealGame();
         const state = game.setup(makePlayers('a', 'b'));
-        game.handleAction(state, 'a', { type: 'decision', value: 'steal' });
+        game.handleAction(state, 'a', { type: 'decision', value: 'steal' }, ctx);
 
         const viewB = game.getPlayerView(state, 'b');
         expect(viewB.decisions).toEqual({ a: HIDDEN });
         expect(game.getPlayerView(state, 'a').decisions).toEqual({ a: 'steal' });
         expect(state.decisions.a).toBe('steal'); // real state untouched
 
-        game.handleAction(state, 'b', { type: 'decision', value: 'split' });
+        game.handleAction(state, 'b', { type: 'decision', value: 'split' }, ctx);
         expect(state.phase).toBe('REVEAL');
         expect(game.getPlayerView(state, 'b').decisions).toEqual({ a: 'steal', b: 'split' });
     });
@@ -40,7 +40,7 @@ describe('getPlayerView', () => {
     it('Unknown to One hides the word from the blackened and the role from everyone else', () => {
         const game = new UnknownToOneGame();
         const state = game.setup(makePlayers('a', 'b', 'c'));
-        game.handleAction(state, 'a', { type: 'set_word', word: 'Pizza' });
+        game.handleAction(state, 'a', { type: 'set_word', word: 'Pizza' }, ctx);
         const blackened = state.blackenedId!;
         const other = ['a', 'b', 'c'].find(id => id !== blackened)!;
 
@@ -64,7 +64,7 @@ describe('getPlayerView', () => {
     it('Mind Reader only shows a player their own word', () => {
         const game = new MindReaderGame();
         const state = game.setup(makePlayers('a', 'b'));
-        game.handleAction(state, 'a', { type: 'start_game' });
+        game.handleAction(state, 'a', { type: 'start_game' }, ctx);
 
         expect(Object.keys(game.getPlayerView(state, 'b', ctx).words)).toEqual(['b']);
         expect(Object.keys(game.getPlayerView(state, 'a', ctx).words)).toEqual(['a']);
@@ -73,8 +73,8 @@ describe('getPlayerView', () => {
     it('Mind Reader lets the host see words during manual setup', () => {
         const game = new MindReaderGame();
         const state = game.setup(makePlayers('a', 'b'));
-        game.handleAction(state, 'a', { type: 'set_mode', mode: 'MANUAL' });
-        game.handleAction(state, 'a', { type: 'assign_word', targetId: 'b', word: 'Moon' });
+        game.handleAction(state, 'a', { type: 'set_mode', mode: 'MANUAL' }, ctx);
+        game.handleAction(state, 'a', { type: 'assign_word', targetId: 'b', word: 'Moon' }, ctx);
 
         expect(game.getPlayerView(state, 'a', ctx).words).toEqual({ b: 'Moon' });
         expect(game.getPlayerView(state, 'b', ctx).words).toEqual({ b: 'Moon' });
@@ -114,8 +114,8 @@ describe('getPlayerView', () => {
         jest.useFakeTimers();
         const game = new TheLastWordGame();
         const state = game.setup(makePlayers('a', 'b', 'c'));
-        game.handleAction(state, 'a', { type: 'set_topic', topic: 'Fruits' });
-        game.handleAction(state, 'b', { type: 'submit_answer', text: 'Mango' });
+        game.handleAction(state, 'a', { type: 'set_topic', topic: 'Fruits' }, ctx);
+        game.handleAction(state, 'b', { type: 'submit_answer', text: 'Mango' }, ctx);
 
         const view = game.getPlayerView(state, 'c');
         expect(view.pendingAnswers).toHaveLength(1);

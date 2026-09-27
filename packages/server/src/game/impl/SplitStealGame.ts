@@ -1,5 +1,6 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState, maskRecord } from '../GamePlugin';
+import { GameContext, GamePlugin, GameState, maskRecord, SYSTEM_SENDER } from '../GamePlugin';
+import { GAME_TIMING } from '../../constants';
 
 interface SplitStealState extends GameState {
     round: number;
@@ -18,7 +19,7 @@ export class SplitStealGame implements GamePlugin {
     maxPlayers = 8;
     readonly MAX_ROUNDS = 4;
 
-    setup(players: Player[], config?: any): SplitStealState {
+    setup(players: Player[]): SplitStealState {
         const trustPoints: { [playerId: string]: number } = {};
 
         // Handle Odd Number of Players
@@ -54,19 +55,16 @@ export class SplitStealGame implements GamePlugin {
         return { ...state, decisions: maskRecord(state.decisions, viewerId) as SplitStealState['decisions'] };
     }
 
-    handleAction(state: SplitStealState,senderId: string, action: any, dispatch?: (s: any) => void): SplitStealState | null {
+    handleAction(state: SplitStealState, senderId: string, action: any, ctx: GameContext): SplitStealState | null {
         if (action.type === 'next_round') {
-            // Only allow if in REVEAL phase
-            if (state.phase !== 'REVEAL') return null;
-            // Should verify host? The generic handleAction doesn't explicitly pass host info easily without looking up room, 
-            // but for now we assume client UI restricts it or we iterate. 
-            // Ideally we'd check if senderId is host. 
-            // Use resolveRound to move to next.
+            // Only the game's own reveal timer advances the round, so nobody can cut the reveal short
+            if (senderId !== SYSTEM_SENDER || state.phase !== 'REVEAL') return null;
             this.resolveRound(state);
             return state;
         }
 
         if (action.type !== 'decision') return null;
+        if (action.value !== 'split' && action.value !== 'steal') return null;
         if (state.phase !== 'DECISION') return null; // Can't decide during reveal
         if (state.decisions[senderId]) return null; // Already decided
 
@@ -74,29 +72,45 @@ export class SplitStealGame implements GamePlugin {
         const isPaired = state.pairings.some(pair => pair.includes(senderId));
         if (!isPaired) return null;
 
-        state.decisions[senderId] = action.value; // 'split' or 'steal'
+        state.decisions[senderId] = action.value;
+        this.revealIfAllDecided(state, ctx);
+        return state;
+    }
 
-        // Check if all active participants have decided
-        const activeParticipantIds = new Set<string>();
-        state.pairings.forEach(pair => {
-            activeParticipantIds.add(pair[0]);
-            activeParticipantIds.add(pair[1]);
-        });
+    onPlayerLeave(state: SplitStealState, playerId: string, ctx: GameContext): SplitStealState {
+        delete state.trustPoints[playerId];
+        delete state.decisions[playerId];
+        if (state.spectatorId === playerId) state.spectatorId = undefined;
 
-        let allDecided = true;
-        for (const pid of activeParticipantIds) {
-            if (!state.decisions[pid]) {
-                allDecided = false;
-                break;
+        const pair = state.pairings.find(p => p.includes(playerId));
+        if (pair) {
+            state.pairings = state.pairings.filter(p => p !== pair);
+            const partner = pair[0] === playerId ? pair[1] : pair[0];
+            delete state.decisions[partner]; // Their choice was against someone who's gone
+
+            if (state.phase === 'DECISION' && state.spectatorId) {
+                // The spectator steps in so the partner still gets to play this round
+                state.pairings.push([partner, state.spectatorId]);
+                state.spectatorId = undefined;
+            } else if (!state.spectatorId) {
+                state.spectatorId = partner;
             }
         }
 
-        if (allDecided) {
-            // Instead of auto-resolving, go to REVEAL phase
-            state.phase = 'REVEAL';
+        if (state.pairings.length === 0) {
+            state.round = this.MAX_ROUNDS + 1; // Nobody left to pair up: end the game
+        } else if (state.phase === 'DECISION') {
+            this.revealIfAllDecided(state, ctx);
         }
-
         return state;
+    }
+
+    private revealIfAllDecided(state: SplitStealState, ctx: GameContext) {
+        const allDecided = state.pairings.every(([p1, p2]) => state.decisions[p1] && state.decisions[p2]);
+        if (allDecided) {
+            state.phase = 'REVEAL';
+            ctx.schedule(GAME_TIMING.SPLIT_STEAL_REVEAL_DELAY, { type: 'next_round' });
+        }
     }
 
     private resolveRound(state: SplitStealState) {
@@ -139,11 +153,15 @@ export class SplitStealGame implements GamePlugin {
         state.phase = 'DECISION'; // Back to decision
 
         if (state.round <= this.MAX_ROUNDS) {
-            // Re-pair ONLY the active players
-            const currentActiveIds = new Set<string>();
-            state.pairings.forEach(p => { currentActiveIds.add(p[0]); currentActiveIds.add(p[1]); });
-
-            state.pairings = this.createPairings(Array.from(currentActiveIds));
+            // Re-pair everyone still in the game. The spectator only sits out while the count is odd.
+            let ids = Object.keys(state.trustPoints);
+            if (ids.length % 2 !== 0) {
+                if (!state.spectatorId || !ids.includes(state.spectatorId)) state.spectatorId = ids[ids.length - 1];
+                ids = ids.filter(id => id !== state.spectatorId);
+            } else {
+                state.spectatorId = undefined;
+            }
+            state.pairings = this.createPairings(ids);
         }
     }
 

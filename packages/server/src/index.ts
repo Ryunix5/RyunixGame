@@ -8,7 +8,6 @@ import { SocketEvents, RoomStatus, Room, SessionInfo } from '@ryunix/shared';
 import { SERVER_CONFIG, ROOM_CONFIG } from './constants';
 import { logger } from './utils/logger';
 import { validatePlayerName, validateRoomCode, validateChatMessage, ValidationError } from './utils/validation';
-import { handleGameCompletion } from './game/gameUtils';
 import { apiLimiter } from './middleware/rateLimiter';
 
 // Load environment variables
@@ -35,6 +34,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : SERVER_CONFIG.PORT;
 
 import { RoomManager } from './RoomManager';
 import { GameRegistry } from './game/GameRegistry';
+import { GameRunner } from './game/GameRunner';
 import { ContentManager } from './services/ContentManager';
 import { packageLoader } from './services/PackageLoader';
 
@@ -50,6 +50,7 @@ import { MatchingMindsGame } from './game/impl/MatchingMindsGame';
 const roomManager = new RoomManager();
 const gameRegistry = new GameRegistry();
 const contentManager = new ContentManager();
+const gameRunner = new GameRunner(gameRegistry, room => broadcastRoom(room));
 
 // Apply rate limiting to API routes
 app.use('/api/', apiLimiter);
@@ -121,8 +122,21 @@ function removeFromCurrentRoom(playerId: string) {
     if (!current) return;
     io.in(playerId).socketsLeave(current.id);
     const updated = roomManager.leaveRoom(current.id, playerId);
-    if (updated) broadcastRoom(updated);
+    afterPlayerRemoved(updated, current.id, playerId);
     logger.info('Player left room', { playerId, roomId: current.id });
+}
+
+// Lets a running game drop the player (so it doesn't wait on them), then tells everyone.
+function afterPlayerRemoved(room: Room | null, roomId: string, playerId: string) {
+    if (!room) {
+        gameRunner.stop(roomId);
+        return;
+    }
+    if (room.status === RoomStatus.GAME) {
+        gameRunner.playerLeft(room, playerId); // broadcasts
+    } else {
+        broadcastRoom(room);
+    }
 }
 
 io.on('connection', (socket) => {
@@ -132,6 +146,18 @@ io.on('connection', (socket) => {
     socket.join(playerId);
     socket.emit(SocketEvents.SESSION, session satisfies SessionInfo);
     logger.info('Client connected', { socketId: socket.id, playerId });
+
+    // Registers a handler that can't take the server down: non-object payloads become {} and
+    // exceptions are logged instead of crashing the process (one bad message used to kill the server).
+    const on = (event: string, handler: (data: any) => void) => {
+        socket.on(event, (data: unknown) => {
+            try {
+                handler(data && typeof data === 'object' ? data : {});
+            } catch (err) {
+                logger.error('Socket handler failed', { event, playerId, err });
+            }
+        });
+    };
 
     // Only lets a player act on the room they are actually in
     const getMyRoom = (roomId: string): Room | undefined => {
@@ -153,7 +179,7 @@ io.on('connection', (socket) => {
         logger.debug('Event received', { event: eventName, socketId: socket.id });
     });
 
-    socket.on(SocketEvents.CREATE_ROOM, (data: { hostName: string }) => {
+    on(SocketEvents.CREATE_ROOM, (data: { hostName: string }) => {
         try {
             const validName = validatePlayerName(data.hostName);
             removeFromCurrentRoom(playerId);
@@ -172,7 +198,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on(SocketEvents.JOIN_ROOM, (data: { roomId: string, playerName: string }) => {
+    on(SocketEvents.JOIN_ROOM, (data: { roomId: string, playerName: string }) => {
         try {
             const validName = validatePlayerName(data.playerName);
             const validRoomId = validateRoomCode(data.roomId);
@@ -199,11 +225,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on(SocketEvents.LEAVE_ROOM, () => {
+    on(SocketEvents.LEAVE_ROOM, () => {
         removeFromCurrentRoom(playerId);
     });
 
-    socket.on(SocketEvents.KICK_PLAYER, (data: { roomId: string, targetId: string }) => {
+    on(SocketEvents.KICK_PLAYER, (data: { roomId: string, targetId: string }) => {
         const room = getMyRoom(data.roomId);
         if (!room || room.hostId !== playerId || data.targetId === playerId) return;
         if (!room.players.some(p => p.id === data.targetId)) return;
@@ -214,7 +240,8 @@ io.on('connection', (socket) => {
     });
 
     // Get available content packages
-    socket.on('getAvailablePackages', (callback) => {
+    socket.on('getAvailablePackages', (callback: unknown) => {
+        if (typeof callback !== 'function') return;
         try {
             const packages = packageLoader.loadPackages();
             const summary = packages.map(p => ({
@@ -226,12 +253,12 @@ io.on('connection', (socket) => {
             }));
             callback(summary);
         } catch (error) {
-            console.error('[getAvailablePackages] Error:', error);
+            logger.error('Failed to load packages', error);
             callback([]);
         }
     });
 
-    socket.on(SocketEvents.SELECT_GAME, (data: { roomId: string, gameId: string }) => {
+    on(SocketEvents.SELECT_GAME, (data: { roomId: string, gameId: string }) => {
         const room = getMyRoom(data.roomId);
         if (!room) return;
         if (room.hostId !== playerId) return; // Only host can select
@@ -240,151 +267,35 @@ io.on('connection', (socket) => {
         broadcastRoom(room);
     });
 
-    socket.on(SocketEvents.START_GAME, (data: { roomId: string, gameId: string, packageId?: string }) => {
-        console.log(`[Server] Received START_GAME. Room: ${data.roomId}, Game: ${data.gameId}, Package: ${data.packageId}`);
+    on(SocketEvents.START_GAME, (data: { roomId: string, gameId: string, packageId?: string }) => {
         const room = getMyRoom(data.roomId);
-        if (!room) {
-            console.log('[Server] Room not found');
-            return;
-        }
-        if (room.hostId !== playerId) {
-            console.log(`[Server] Unauthorized start attempt. Host: ${room.hostId}, Player: ${playerId}`);
-            return;
-        }
-
-        const game = gameRegistry.get(data.gameId);
-        if (!game) {
-            console.log(`[Server] Game not found in registry: ${data.gameId}`);
-            // List available games for debug
-            // console.log('Available games:', gameRegistry.getAllIds()); // valid if method exists
-            return;
-        }
-
-
-
-        console.log('[Server] Initializing game...');
-
-        // Fetch content config
-        let gameConfig = {};
-        try {
-            // Only try to load content if the manager is ready
-            if (contentManager) {
-                console.log(`[Server] Fetching content for ${data.gameId}...`);
-                const packs = contentManager.getContent(data.gameId);
-                if (packs && packs.length > 0) {
-                    gameConfig = packs[0].data;
-                    console.log(`[Server] Loaded content pack: ${packs[0].packName} for ${data.gameId}`);
-                } else {
-                    console.log(`[Server] No content packs found for ${data.gameId}, using defaults.`);
-                }
-            }
-        } catch (err) {
-            console.error('[Server] Failed to load content (non-fatal):', err);
-        }
+        if (!room || room.hostId !== playerId) return;
 
         try {
-            // Initialize game
-            room.status = RoomStatus.GAME;
-            // Callback for games to trigger updates (e.g. timers)
-            const emitState = (newState: any) => {
-                if (room.status === RoomStatus.GAME) {
-                    room.gameState = newState;
-                    broadcastRoom(room);
-                }
-            };
-
             const config = data.packageId ? { packageId: data.packageId } : {};
-            console.log(`[Server] Setting up game with config:`, config);
-            room.gameState = game.setup(room.players, config, emitState);
-            broadcastRoom(room);
-            console.log(`[Server] Game ${data.gameId} started successfully for Room ${room.id}.`);
+            const error = gameRunner.start(room, data.gameId, config);
+            if (error) socket.emit(SocketEvents.ERROR, { message: error });
         } catch (err) {
-            console.error(`[Server] CRITICAL: Failed to setup game ${data.gameId}:`, err);
+            logger.error('Failed to start game', { roomId: room.id, gameId: data.gameId, err });
+            room.status = RoomStatus.LOBBY;
+            room.gameState = undefined;
+            gameRunner.stop(room.id);
+            broadcastRoom(room);
             socket.emit(SocketEvents.ERROR, { message: 'Failed to start game due to server error.' });
         }
     });
 
-    socket.on(SocketEvents.GAME_ACTION, (data: { roomId: string, action: any }) => {
-        console.log(`[Server] Received GAME_ACTION for room ${data.roomId}`, data.action);
+    on(SocketEvents.GAME_ACTION, (data: { roomId: string, action: any }) => {
         const room = getMyRoom(data.roomId);
-        if (!room) {
-            console.log('[Server] Room not found');
-            return;
-        }
-        if (!room.gameState) {
-            console.log('[Server] Room has no gameState');
-            return;
-        }
-
-        console.log(`[Server] Game Type: ${room.gameState.type}`);
-        const game = gameRegistry.get(room.gameState.type);
-        if (!game) {
-            console.log(`[Server] Game instance not found for type: ${room.gameState.type}`);
-            return;
-        }
-
-        const emitState = (newState: any) => {
-            if (room.status === RoomStatus.GAME) {
-                room.gameState = newState;
-                broadcastRoom(room);
-            }
-        };
-
-        const newState = game.handleAction(room.gameState, playerId, data.action, emitState);
-        if (newState) {
-            room.gameState = newState;
-            broadcastRoom(room);
-
-            // AUTO-ADVANCE: If Split/Steal enters REVEAL phase
-            if (newState.type === 'split-steal' && (newState as any).phase === 'REVEAL') {
-                console.log(`[Server] Split/Steal entered REVEAL phase. Scheduling next round in 4s...`);
-                setTimeout(() => {
-                    const roomRef = roomManager.getRoom(data.roomId);
-                    if (!roomRef || !roomRef.gameState) return;
-
-                    // Verify we are still in REVEAL (avoid race conditions if multiple triggers)
-                    if ((roomRef.gameState as any).phase !== 'REVEAL') return;
-
-                    console.log(`[Server] Auto-advancing round for ${data.roomId}`);
-                    const nextState = game.handleAction(roomRef.gameState, 'system', { type: 'next_round' });
-
-                    if (nextState) {
-                        roomRef.gameState = nextState;
-                        broadcastRoom(roomRef);
-
-                        // Check completion again after auto-advance
-                        if (game.isComplete(nextState)) {
-                            const results = game.resolve(nextState, roomRef.players);
-                            roomRef.status = RoomStatus.RESULTS;
-                            roomRef.gameState = { ...roomRef.gameState, results };
-
-                            // Handle game completion and winner calculation
-                            const { players: updatedPlayers, winnerId } = handleGameCompletion(results, roomRef.players);
-                            roomRef.players = updatedPlayers;
-
-                            broadcastRoom(roomRef);
-                        }
-                    }
-                }, 4000); // 4 Seconds Delay
-            }
-
-            if (game.isComplete(newState)) {
-                const results = game.resolve(newState, room.players);
-                room.status = RoomStatus.RESULTS;
-                room.gameState = { ...room.gameState, results };
-
-                // Handle game completion and winner calculation
-                const { players: updatedPlayers, winnerId } = handleGameCompletion(results, room.players);
-                room.players = updatedPlayers;
-
-                logger.info('Game completed', { roomId: room.id, winnerId });
-
-                broadcastRoom(room);
-            }
+        if (!room || !data.action || typeof data.action !== 'object') return;
+        try {
+            gameRunner.handleAction(room, playerId, data.action);
+        } catch (err) {
+            logger.error('Game action failed', { roomId: room.id, action: data.action?.type, err });
         }
     });
 
-    socket.on(SocketEvents.LIST_ROOMS, () => {
+    on(SocketEvents.LIST_ROOMS, () => {
         const rooms = roomManager.getAvailableRooms();
         const summaries = rooms.map(r => ({
             id: r.id,
@@ -396,16 +307,17 @@ io.on('connection', (socket) => {
         socket.emit(SocketEvents.ROOM_LIST, summaries);
     });
 
-    socket.on(SocketEvents.RESET_LOBBY, (data: { roomId: string }) => {
+    on(SocketEvents.RESET_LOBBY, (data: { roomId: string }) => {
         const room = getMyRoom(data.roomId);
         if (!room || room.hostId !== playerId) return; // Only host can reset
 
+        gameRunner.stop(room.id);
         room.status = RoomStatus.LOBBY;
         room.gameState = undefined;
         broadcastRoom(room);
     });
 
-    socket.on(SocketEvents.SEND_CHAT, (data: { roomId: string, message: string }) => {
+    on(SocketEvents.SEND_CHAT, (data: { roomId: string, message: string }) => {
         try {
             const room = getMyRoom(data.roomId);
             if (!room) return;
@@ -432,7 +344,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('voice_signal', (data: { to: string, signal: any }) => {
+    on('voice_signal', (data: { to: string, signal: any }) => {
         // Only relay signalling between players in the same room
         const room = roomManager.findRoomByPlayer(playerId);
         if (!room || !room.players.some(p => p.id === data.to)) return;
@@ -449,7 +361,11 @@ io.on('connection', (socket) => {
         if (io.sockets.adapter.rooms.get(playerId)?.size) return;
 
         const room = roomManager.markDisconnected(playerId, ROOM_CONFIG.RECONNECT_GRACE_MS, (updated, roomId) => {
-            if (updated) broadcastRoom(updated);
+            try {
+                afterPlayerRemoved(updated, roomId, playerId);
+            } catch (err) {
+                logger.error('Failed to remove player after grace period', { playerId, roomId, err });
+            }
             logger.info('Player removed after reconnect grace period', { playerId, roomId });
         });
         if (room) broadcastRoom(room);

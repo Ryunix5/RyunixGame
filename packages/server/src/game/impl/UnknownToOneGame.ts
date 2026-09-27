@@ -52,6 +52,18 @@ export class UnknownToOneGame implements GamePlugin {
         } as UnknownToOneState;
     }
 
+    getPlayerView(state: UnknownToOneState, viewerId: string): UnknownToOneState {
+        const isBlackened = viewerId === state.blackenedId;
+        const blackenedRevealed = state.phase === 'BONUS_GUESS' || state.phase === 'REVEAL';
+        return {
+            ...state,
+            // Only the blackened player knows their role until they are caught or the round ends
+            blackenedId: isBlackened || blackenedRevealed ? state.blackenedId : undefined,
+            // The blackened player never sees the word until the reveal
+            secretWord: isBlackened && state.phase !== 'REVEAL' ? undefined : state.secretWord,
+        };
+    }
+
     handleAction(state: UnknownToOneState, senderId: string, action: any, dispatch?: (s: any) => void): UnknownToOneState | null {
         if (state.winnerIds) return null;
 

@@ -4,12 +4,11 @@ import { Server } from 'socket.io';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { SocketEvents, RoomStatus } from '@ryunix/shared';
-import { SERVER_CONFIG } from './constants';
+import { SocketEvents, RoomStatus, Room, SessionInfo } from '@ryunix/shared';
+import { SERVER_CONFIG, ROOM_CONFIG } from './constants';
 import { logger } from './utils/logger';
 import { validatePlayerName, validateRoomCode, validateChatMessage, ValidationError } from './utils/validation';
 import { handleGameCompletion } from './game/gameUtils';
-import { databaseService } from './services/DatabaseService';
 import { apiLimiter } from './middleware/rateLimiter';
 
 // Load environment variables
@@ -99,17 +98,55 @@ gameRegistry.register(new UnknownToOneGame());
 gameRegistry.register(new MindReaderGame());
 gameRegistry.register(new MatchingMindsGame());
 
-// Cleanup expired sessions on startup and periodically
-databaseService.cleanupExpiredSessions();
-setInterval(() => {
-    const cleaned = databaseService.cleanupExpiredSessions();
-    if (cleaned > 0) {
-        logger.info('Cleaned up expired sessions', { count: cleaned });
+// Builds the copy of a room that a single player is allowed to see. While a game is running,
+// games with hidden information (secret words, pending choices, roles) redact other players' data.
+function roomViewFor(room: Room, viewerId: string): Room {
+    if (room.status !== RoomStatus.GAME || !room.gameState) return room;
+    const game = gameRegistry.get(room.gameState.type);
+    if (!game?.getPlayerView) return room;
+    return { ...room, gameState: game.getPlayerView(room.gameState, viewerId, { hostId: room.hostId }) };
+}
+
+// Sends each player in the room their own view. Never emit a raw room to the whole socket.io room.
+// Every socket joins a socket.io room named after its player id, so this reaches all of a player's tabs.
+function broadcastRoom(room: Room) {
+    for (const player of room.players) {
+        io.to(player.id).emit(SocketEvents.ROOM_UPDATED, roomViewFor(room, player.id));
     }
-}, 60 * 60 * 1000); // Every hour
+}
+
+// Removes a player from whatever room they are in right now and tells everyone left behind.
+function removeFromCurrentRoom(playerId: string) {
+    const current = roomManager.findRoomByPlayer(playerId);
+    if (!current) return;
+    io.in(playerId).socketsLeave(current.id);
+    const updated = roomManager.leaveRoom(current.id, playerId);
+    if (updated) broadcastRoom(updated);
+    logger.info('Player left room', { playerId, roomId: current.id });
+}
 
 io.on('connection', (socket) => {
-    logger.info('Client connected', { socketId: socket.id });
+    // Resume the client's identity if it sent a token we know, otherwise start a new one
+    const session = roomManager.resolveSession(socket.handshake.auth?.sessionToken);
+    const playerId = session.playerId;
+    socket.join(playerId);
+    socket.emit(SocketEvents.SESSION, session satisfies SessionInfo);
+    logger.info('Client connected', { socketId: socket.id, playerId });
+
+    // Only lets a player act on the room they are actually in
+    const getMyRoom = (roomId: string): Room | undefined => {
+        const room = roomManager.getRoom(roomId);
+        return room?.players.some(p => p.id === playerId) ? room : undefined;
+    };
+
+    // Returning player: put them straight back into their room
+    const existingRoom = roomManager.markConnected(playerId);
+    if (existingRoom) {
+        socket.join(existingRoom.id);
+        socket.emit(SocketEvents.RECONNECTED, roomViewFor(existingRoom, playerId));
+        broadcastRoom(existingRoom);
+        logger.info('Player reconnected', { playerId, roomId: existingRoom.id });
+    }
 
     // DEBUG: Trace all events
     socket.onAny((eventName, ...args) => {
@@ -119,12 +156,10 @@ io.on('connection', (socket) => {
     socket.on(SocketEvents.CREATE_ROOM, (data: { hostName: string }) => {
         try {
             const validName = validatePlayerName(data.hostName);
-            const room = roomManager.createRoom(socket.id, validName, socket.id);
-            socket.join(room.id);
-            socket.emit(SocketEvents.ROOM_UPDATED, room);
-
-            // Persist room to database
-            databaseService.saveRoom(room);
+            removeFromCurrentRoom(playerId);
+            const room = roomManager.createRoom(playerId, validName);
+            io.in(playerId).socketsJoin(room.id);
+            broadcastRoom(room);
 
             logger.info('Room created', { roomId: room.id, hostName: validName });
         } catch (error) {
@@ -137,80 +172,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle reconnection
-    socket.on(SocketEvents.RECONNECT, (data: { sessionToken: string, roomId?: string, playerId?: string }) => {
-        try {
-            logger.info('Reconnection attempt', { sessionToken: data.sessionToken, roomId: data.roomId, playerId: data.playerId });
-
-            // Validate session token
-            const session = databaseService.getSession(data.sessionToken);
-            if (!session) {
-                logger.warn('Invalid session token', { sessionToken: data.sessionToken });
-                socket.emit(SocketEvents.ERROR, { message: 'Invalid or expired session' });
-                return;
-            }
-
-            // Find room by player ID if not provided
-            let roomId = data.roomId;
-            if (!roomId && session.player_id) {
-                roomId = databaseService.getRoomByPlayerId(session.player_id) || undefined;
-            }
-
-            if (!roomId) {
-                logger.info('No active room found for session', { sessionToken: data.sessionToken });
-                socket.emit(SocketEvents.ERROR, { message: 'No active room found' });
-                return;
-            }
-
-            // Load room from database
-            const room = databaseService.getRoom(roomId);
-            if (!room) {
-                logger.warn('Room not found', { roomId });
-                socket.emit(SocketEvents.ERROR, { message: 'Room no longer exists' });
-                return;
-            }
-
-            // Find player in room
-            const existingPlayer = room.players.find(p => p.id === session.player_id);
-            if (!existingPlayer) {
-                logger.warn('Player not in room', { playerId: session.player_id, roomId });
-                socket.emit(SocketEvents.ERROR, { message: 'Player not found in room' });
-                return;
-            }
-
-            // Update player's socket ID
-            existingPlayer.socketId = socket.id;
-            databaseService.updatePlayerSocket(roomId, session.player_id, socket.id);
-            databaseService.updateSession(data.sessionToken, socket.id, roomId);
-
-            // Rejoin socket room
-            socket.join(roomId);
-
-            // Notify player of successful reconnection
-            socket.emit(SocketEvents.RECONNECTED, room);
-
-            // Notify other players in room
-            io.to(roomId).emit(SocketEvents.ROOM_UPDATED, room);
-
-            logger.info('Player reconnected successfully', { playerId: session.player_id, roomId, playerName: session.player_name });
-        } catch (error) {
-            logger.error('Reconnection failed', error);
-            socket.emit(SocketEvents.ERROR, { message: 'Reconnection failed' });
-        }
-    });
-
     socket.on(SocketEvents.JOIN_ROOM, (data: { roomId: string, playerName: string }) => {
         try {
             const validName = validatePlayerName(data.playerName);
             const validRoomId = validateRoomCode(data.roomId);
 
-            const room = roomManager.joinRoom(validRoomId, socket.id, validName, socket.id);
-            if (room) {
-                socket.join(room.id);
-                io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+            const current = roomManager.findRoomByPlayer(playerId);
+            if (current && current.id !== validRoomId) removeFromCurrentRoom(playerId);
 
-                // Persist updated room to database
-                databaseService.saveRoom(room);
+            const room = roomManager.joinRoom(validRoomId, playerId, validName);
+            if (room) {
+                io.in(playerId).socketsJoin(room.id);
+                broadcastRoom(room);
 
                 logger.info('Player joined room', { roomId: room.id, playerName: validName });
             } else {
@@ -227,40 +200,16 @@ io.on('connection', (socket) => {
     });
 
     socket.on(SocketEvents.LEAVE_ROOM, () => {
-        const updatedRoom = roomManager.onDisconnect(socket.id);
-        if (updatedRoom) {
-            io.to(updatedRoom.id).emit(SocketEvents.ROOM_UPDATED, updatedRoom);
-
-            // Update database
-            if (updatedRoom.players.length > 0) {
-                databaseService.saveRoom(updatedRoom);
-            } else {
-                // Room is empty, delete it
-                databaseService.deleteRoom(updatedRoom.id);
-            }
-
-            logger.info('Player left room', { socketId: socket.id, roomId: updatedRoom.id });
-            socket.leave(updatedRoom.id);
-        }
+        removeFromCurrentRoom(playerId);
     });
 
     socket.on(SocketEvents.KICK_PLAYER, (data: { roomId: string, targetId: string }) => {
-        const room = roomManager.getRoom(data.roomId);
-        if (!room || room.hostId !== socket.id) return;
-        
-        const target = room.players.find(p => p.id === data.targetId);
-        if (!target) return;
-        
-        roomManager.leaveRoom(room.id, data.targetId);
-        
-        const targetSocket = io.sockets.sockets.get(target.socketId);
-        if (targetSocket) {
-            targetSocket.emit(SocketEvents.KICKED);
-            targetSocket.leave(room.id);
-        }
+        const room = getMyRoom(data.roomId);
+        if (!room || room.hostId !== playerId || data.targetId === playerId) return;
+        if (!room.players.some(p => p.id === data.targetId)) return;
 
-        io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
-        databaseService.saveRoom(room);
+        io.to(data.targetId).emit(SocketEvents.KICKED);
+        removeFromCurrentRoom(data.targetId);
         logger.info('Player kicked', { roomId: room.id, targetId: data.targetId });
     });
 
@@ -283,23 +232,23 @@ io.on('connection', (socket) => {
     });
 
     socket.on(SocketEvents.SELECT_GAME, (data: { roomId: string, gameId: string }) => {
-        const room = roomManager.getRoom(data.roomId);
+        const room = getMyRoom(data.roomId);
         if (!room) return;
-        if (room.hostId !== socket.id) return; // Only host can select
+        if (room.hostId !== playerId) return; // Only host can select
 
         room.selectedGameId = data.gameId;
-        io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+        broadcastRoom(room);
     });
 
     socket.on(SocketEvents.START_GAME, (data: { roomId: string, gameId: string, packageId?: string }) => {
         console.log(`[Server] Received START_GAME. Room: ${data.roomId}, Game: ${data.gameId}, Package: ${data.packageId}`);
-        const room = roomManager.getRoom(data.roomId);
+        const room = getMyRoom(data.roomId);
         if (!room) {
             console.log('[Server] Room not found');
             return;
         }
-        if (room.hostId !== socket.id) {
-            console.log(`[Server] Unauthorized start attempt. Host: ${room.hostId}, Socket: ${socket.id}`);
+        if (room.hostId !== playerId) {
+            console.log(`[Server] Unauthorized start attempt. Host: ${room.hostId}, Player: ${playerId}`);
             return;
         }
 
@@ -340,14 +289,14 @@ io.on('connection', (socket) => {
             const emitState = (newState: any) => {
                 if (room.status === RoomStatus.GAME) {
                     room.gameState = newState;
-                    io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+                    broadcastRoom(room);
                 }
             };
 
             const config = data.packageId ? { packageId: data.packageId } : {};
             console.log(`[Server] Setting up game with config:`, config);
             room.gameState = game.setup(room.players, config, emitState);
-            io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+            broadcastRoom(room);
             console.log(`[Server] Game ${data.gameId} started successfully for Room ${room.id}.`);
         } catch (err) {
             console.error(`[Server] CRITICAL: Failed to setup game ${data.gameId}:`, err);
@@ -357,7 +306,7 @@ io.on('connection', (socket) => {
 
     socket.on(SocketEvents.GAME_ACTION, (data: { roomId: string, action: any }) => {
         console.log(`[Server] Received GAME_ACTION for room ${data.roomId}`, data.action);
-        const room = roomManager.getRoom(data.roomId);
+        const room = getMyRoom(data.roomId);
         if (!room) {
             console.log('[Server] Room not found');
             return;
@@ -377,14 +326,14 @@ io.on('connection', (socket) => {
         const emitState = (newState: any) => {
             if (room.status === RoomStatus.GAME) {
                 room.gameState = newState;
-                io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+                broadcastRoom(room);
             }
         };
 
-        const newState = game.handleAction(room.gameState, socket.id, data.action, emitState);
+        const newState = game.handleAction(room.gameState, playerId, data.action, emitState);
         if (newState) {
             room.gameState = newState;
-            io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+            broadcastRoom(room);
 
             // AUTO-ADVANCE: If Split/Steal enters REVEAL phase
             if (newState.type === 'split-steal' && (newState as any).phase === 'REVEAL') {
@@ -401,7 +350,7 @@ io.on('connection', (socket) => {
 
                     if (nextState) {
                         roomRef.gameState = nextState;
-                        io.to(roomRef.id).emit(SocketEvents.ROOM_UPDATED, roomRef);
+                        broadcastRoom(roomRef);
 
                         // Check completion again after auto-advance
                         if (game.isComplete(nextState)) {
@@ -413,7 +362,7 @@ io.on('connection', (socket) => {
                             const { players: updatedPlayers, winnerId } = handleGameCompletion(results, roomRef.players);
                             roomRef.players = updatedPlayers;
 
-                            io.to(roomRef.id).emit(SocketEvents.ROOM_UPDATED, roomRef);
+                            broadcastRoom(roomRef);
                         }
                     }
                 }, 4000); // 4 Seconds Delay
@@ -430,7 +379,7 @@ io.on('connection', (socket) => {
 
                 logger.info('Game completed', { roomId: room.id, winnerId });
 
-                io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+                broadcastRoom(room);
             }
         }
     });
@@ -448,20 +397,20 @@ io.on('connection', (socket) => {
     });
 
     socket.on(SocketEvents.RESET_LOBBY, (data: { roomId: string }) => {
-        const room = roomManager.getRoom(data.roomId);
-        if (!room || room.hostId !== socket.id) return; // Only host can reset
+        const room = getMyRoom(data.roomId);
+        if (!room || room.hostId !== playerId) return; // Only host can reset
 
         room.status = RoomStatus.LOBBY;
         room.gameState = undefined;
-        io.to(room.id).emit(SocketEvents.ROOM_UPDATED, room);
+        broadcastRoom(room);
     });
 
     socket.on(SocketEvents.SEND_CHAT, (data: { roomId: string, message: string }) => {
         try {
-            const room = roomManager.getRoom(data.roomId);
+            const room = getMyRoom(data.roomId);
             if (!room) return;
 
-            const player = room.players.find(p => p.id === socket.id);
+            const player = room.players.find(p => p.id === playerId);
             if (!player) return;
 
             // Validate and sanitize message
@@ -484,29 +433,26 @@ io.on('connection', (socket) => {
     });
 
     socket.on('voice_signal', (data: { to: string, signal: any }) => {
+        // Only relay signalling between players in the same room
+        const room = roomManager.findRoomByPlayer(playerId);
+        if (!room || !room.players.some(p => p.id === data.to)) return;
         io.to(data.to).emit('voice_signal', {
-            from: socket.id,
+            from: playerId,
             signal: data.signal
         });
     });
 
     socket.on('disconnect', () => {
-        logger.info('Client disconnected', { socketId: socket.id });
+        logger.info('Client disconnected', { socketId: socket.id, playerId });
 
-        // Clear session socket
-        databaseService.clearSessionSocket(socket.id);
+        // Another tab for the same player is still connected
+        if (io.sockets.adapter.rooms.get(playerId)?.size) return;
 
-        const updatedRoom = roomManager.onDisconnect(socket.id);
-        if (updatedRoom) {
-            io.to(updatedRoom.id).emit(SocketEvents.ROOM_UPDATED, updatedRoom);
-
-            // Update or delete room in database
-            if (updatedRoom.players.length > 0) {
-                databaseService.saveRoom(updatedRoom);
-            } else {
-                databaseService.deleteRoom(updatedRoom.id);
-            }
-        }
+        const room = roomManager.markDisconnected(playerId, ROOM_CONFIG.RECONNECT_GRACE_MS, (updated, roomId) => {
+            if (updated) broadcastRoom(updated);
+            logger.info('Player removed after reconnect grace period', { playerId, roomId });
+        });
+        if (room) broadcastRoom(room);
     });
 });
 
@@ -518,7 +464,6 @@ httpServer.listen(PORT, () => {
 process.on('SIGTERM', () => {
     logger.info('SIGTERM received, closing server gracefully');
     httpServer.close(() => {
-        databaseService.close();
         process.exit(0);
     });
 });
@@ -526,7 +471,6 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
     logger.info('SIGINT received, closing server gracefully');
     httpServer.close(() => {
-        databaseService.close();
         process.exit(0);
     });
 });

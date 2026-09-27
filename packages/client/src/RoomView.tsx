@@ -50,7 +50,7 @@ const VoiceControls: React.FC = () => {
 };
 
 export const RoomView: React.FC = () => {
-    const { room, socket, leaveRoom: socketLeaveRoom } = useSocket();
+    const { room, socket, leaveRoom: socketLeaveRoom, playerId } = useSocket();
     const { playSound } = useAudio();
     const { leaveVoice, joined } = useVoice();
     const [selectedPackageId, setSelectedPackageId] = React.useState<string>('general');
@@ -76,7 +76,7 @@ export const RoomView: React.FC = () => {
 
     if (!room) return null;
 
-    const isHost = socket?.id === room.hostId || room.players.find(p => p.id === socket?.id)?.isHost;
+    const isHost = playerId === room.hostId;
 
     const handleSelectGame = (gameId: string) => {
         if (!isHost || !socket) return;
@@ -201,7 +201,7 @@ export const RoomView: React.FC = () => {
                         <Leaderboard 
                             players={room.players} 
                             maxHeight="h-full" 
-                            myId={socket?.id}
+                            myId={playerId ?? undefined}
                             isHost={isHost}
                             onKick={handleKick}
                         />

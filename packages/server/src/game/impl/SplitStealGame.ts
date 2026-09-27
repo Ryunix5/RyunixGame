@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, maskRecord } from '../GamePlugin';
 
 interface SplitStealState extends GameState {
     round: number;
@@ -49,7 +49,12 @@ export class SplitStealGame implements GamePlugin {
         };
     }
 
-    handleAction(state: SplitStealState, senderId: string, action: any, dispatch?: (s: any) => void): SplitStealState | null {
+    getPlayerView(state: SplitStealState, viewerId: string): SplitStealState {
+        if (state.phase !== 'DECISION') return state;
+        return { ...state, decisions: maskRecord(state.decisions, viewerId) as SplitStealState['decisions'] };
+    }
+
+    handleAction(state: SplitStealState,senderId: string, action: any, dispatch?: (s: any) => void): SplitStealState | null {
         if (action.type === 'next_round') {
             // Only allow if in REVEAL phase
             if (state.phase !== 'REVEAL') return null;

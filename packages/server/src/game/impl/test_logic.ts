@@ -2,14 +2,14 @@ import { SplitStealGame } from './SplitStealGame';
 import { Player } from '@ryunix/shared';
 
 const testPlayers: Player[] = [
-    { id: 'p1', name: 'Player 1', isHost: true, isAlive: true, score: 0, roomWins: 0, socketId: 's1' },
-    { id: 'p2', name: 'Player 2', isHost: false, isAlive: true, score: 0, roomWins: 0, socketId: 's2' }
+    { id: 'p1', name: 'Player 1', isHost: true, isAlive: true, score: 0, roomWins: 0, connected: true },
+    { id: 'p2', name: 'Player 2', isHost: false, isAlive: true, score: 0, roomWins: 0, connected: true }
 ];
 
 const threePlayers: Player[] = [
-    { id: 'p1', name: 'Player 1', isHost: true, isAlive: true, score: 0, roomWins: 0, socketId: 's1' },
-    { id: 'p2', name: 'Player 2', isHost: false, isAlive: true, score: 0, roomWins: 0, socketId: 's2' },
-    { id: 'p3', name: 'Player 3', isHost: false, isAlive: true, score: 0, roomWins: 0, socketId: 's3' }
+    { id: 'p1', name: 'Player 1', isHost: true, isAlive: true, score: 0, roomWins: 0, connected: true },
+    { id: 'p2', name: 'Player 2', isHost: false, isAlive: true, score: 0, roomWins: 0, connected: true },
+    { id: 'p3', name: 'Player 3', isHost: false, isAlive: true, score: 0, roomWins: 0, connected: true }
 ];
 
 

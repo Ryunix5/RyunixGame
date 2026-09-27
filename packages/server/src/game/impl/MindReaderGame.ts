@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, PlayerViewContext } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 
 interface MindReaderState extends GameState {
@@ -47,6 +47,14 @@ export class MindReaderGame implements GamePlugin {
             guesses: {},
             availableWords: finalWords
         } as MindReaderState;
+    }
+
+    getPlayerView(state: MindReaderState, viewerId: string, ctx: PlayerViewContext): MindReaderState {
+        if (state.phase === 'GAME_OVER') return state;
+        // During manual setup the host is assigning words, so they need to see them all
+        if (state.phase === 'SETUP' && viewerId === ctx.hostId) return state;
+        const words = state.words[viewerId] !== undefined ? { [viewerId]: state.words[viewerId] } : {};
+        return { ...state, words };
     }
 
     handleAction(state: MindReaderState, senderId: string, action: any, dispatch?: (s: any) => void): MindReaderState | null {

@@ -1,4 +1,4 @@
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, HIDDEN } from '../GamePlugin';
 import { Player, MatchingMindsState, MatchingMindsRound } from '@ryunix/shared';
 import { logger } from '../../utils/logger';
 
@@ -26,6 +26,16 @@ export class MatchingMindsGame implements GamePlugin {
         };
 
         return state;
+    }
+
+    getPlayerView(state: GameState, viewerId: string): GameState {
+        const mmState = state as unknown as (MatchingMindsState & GameState);
+        if (mmState.phase !== 'SUBMITTING') return state;
+        const submissions: MatchingMindsState['submissions'] = {};
+        for (const [id, sub] of Object.entries(mmState.submissions)) {
+            submissions[id] = id === viewerId ? sub : { ...sub, word: HIDDEN };
+        }
+        return { ...mmState, submissions };
     }
 
     handleAction(state: GameState, senderId: string, action: any, dispatch?: (state: GameState) => void): GameState | null {

@@ -13,6 +13,8 @@ export const ROOM_CONFIG = {
     MAX_NAME_LENGTH: 20,
     /** Minimum length for player names */
     MIN_NAME_LENGTH: 1,
+    /** How long a disconnected player keeps their seat before being removed (ms) */
+    RECONNECT_GRACE_MS: 60 * 1000,
 } as const;
 
 // Game Timing
@@ -51,14 +53,6 @@ export const RATE_LIMITS = {
     SOCKET_MAX_CONNECTIONS: 10,
     /** Socket connection window duration (ms) */
     SOCKET_WINDOW_MS: 60 * 1000, // 1 minute
-} as const;
-
-// Database Configuration
-export const DB_CONFIG = {
-    /** Database file path */
-    DB_PATH: './content.db',
-    /** Checkpoint interval for WAL mode (ms) */
-    CHECKPOINT_INTERVAL: 30000,
 } as const;
 
 // Validation Patterns

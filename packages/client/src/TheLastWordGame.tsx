@@ -24,11 +24,11 @@ interface TheLastWordState {
 }
 
 export const TheLastWordGame = ({ gameState }: { gameState: TheLastWordState }) => {
-    const { room, socket } = useSocket();
+    const { room, socket, playerId } = useSocket();
     const { playSound } = useAudio();
     const [myAnswer, setMyAnswer] = useState('');
     const [topicInput, setTopicInput] = useState('');
-    const myId = socket?.id;
+    const myId = playerId;
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
     const isHost = room?.players[0]?.id === myId;

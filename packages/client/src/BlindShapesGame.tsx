@@ -15,13 +15,10 @@ interface BlindShapesState {
 }
 
 export const BlindShapesGame: React.FC<{ gameState: BlindShapesState }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
-    const myId = socket?.id;
+    const { socket, room, playerId } = useSocket();
+    const myId = playerId;
 
     if (!room || !myId) return null;
-
-    const mySuit = gameState.suits[myId];
-    console.log("My hidden suit", mySuit);
 
     const isEliminated = gameState.eliminated.includes(myId);
     const hasGuessed = !!gameState.guesses[myId];

@@ -10,7 +10,7 @@ describe('gameUtils', () => {
         score: 0,
         roomWins,
         roomId: 'TEST123',
-        socketId: `socket-${id}`
+        connected: true
     });
 
     describe('calculateWinner', () => {

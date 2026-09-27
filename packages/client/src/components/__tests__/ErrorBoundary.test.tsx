@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
@@ -15,7 +15,7 @@ describe('ErrorBoundary', () => {
     // Suppress console.error for these tests
     const originalError = console.error;
     beforeAll(() => {
-        console.error = jest.fn();
+        console.error = vi.fn();
     });
 
     afterAll(() => {

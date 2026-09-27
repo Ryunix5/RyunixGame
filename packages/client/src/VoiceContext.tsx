@@ -23,7 +23,7 @@ const VoiceContext = createContext<VoiceContextProps>({
 export const useVoice = () => useContext(VoiceContext);
 
 export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { socket, room } = useSocket();
+    const { socket, room, playerId } = useSocket();
     const [joined, setJoined] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [peers, setPeers] = useState<{ peerId: string; stream: MediaStream }[]>([]);
@@ -129,7 +129,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // But if `joined` is false, `userStream.current` is null, so we won't create a peer in handleSignal.
 
             room.players.forEach(p => {
-                if (p.id === socket.id) return;
+                if (p.id === playerId) return;
                 const peer = createPeer(p.id, stream, true); // I am initiator
                 peersRef.current[p.id] = peer;
             });

@@ -18,9 +18,9 @@ interface PrisonersLetterState {
 }
 
 export const PrisonersLetterGame: React.FC<{ gameState: PrisonersLetterState }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
+    const { socket, room, playerId } = useSocket();
     const [inputMessage, setInputMessage] = useState('');
-    const myId = socket?.id;
+    const myId = playerId;
 
     useEffect(() => {
         // Pre-fill existing message if editing

@@ -1,12 +1,13 @@
 export interface Player {
-    id: string;
+    id: string; // Stable across reconnects; never a socket id
+
     name: string;
     isHost: boolean;
     isAlive: boolean;
     score: number; // Temporary game score (resets each game)
     roomWins: number; // Persistent wins in this room session
     roomId?: string;
-    socketId: string;
+    connected: boolean; // False while the player is inside the reconnect grace period
 }
 
 export enum RoomStatus {
@@ -39,7 +40,6 @@ export enum SocketEvents {
     RESET_LOBBY = 'reset_lobby',
     SEND_CHAT = 'send_chat',
     SELECT_GAME = 'select_game',
-    RECONNECT = 'reconnect', // New: reconnection event
 
     // Server -> Client
     ROOM_UPDATED = 'room_updated',
@@ -48,13 +48,14 @@ export enum SocketEvents {
     GAME_STATE = 'game_state',
     CHAT_MESSAGE = 'chat_message',
     ROOM_LIST = 'room_list',
-    RECONNECTED = 'reconnected' // New: successful reconnection
+    RECONNECTED = 'reconnected', // Sent when a returning session is put back into its room
+    SESSION = 'session' // Sent on every connect with the session this socket belongs to
 }
 
-export interface ReconnectData {
+// The token is a secret the client keeps to resume its identity; playerId is public.
+export interface SessionInfo {
     sessionToken: string;
-    roomId?: string;
-    playerId?: string;
+    playerId: string;
 }
 
 // ==================== MATCHING MINDS GAME ====================

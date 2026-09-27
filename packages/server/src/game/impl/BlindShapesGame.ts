@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, HIDDEN, maskRecord } from '../GamePlugin';
 
 type Suit = '♠️' | '♥️' | '♦️' | '♣️';
 
@@ -34,6 +34,14 @@ export class BlindShapesGame implements GamePlugin {
             eliminated: [],
             history: []
         };
+    }
+
+    getPlayerView(state: BlindShapesState, viewerId: string): BlindShapesState {
+        if (state.winnerIds) return state;
+        // You can see everyone's card except your own
+        const suits = { ...state.suits };
+        if (viewerId in suits) suits[viewerId] = HIDDEN as Suit;
+        return { ...state, suits, guesses: maskRecord(state.guesses, viewerId) as BlindShapesState['guesses'] };
     }
 
     handleAction(state: BlindShapesState, senderId: string, action: any, dispatch?: (s: any) => void): BlindShapesState | null {

@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { SocketEvents, Room, ReconnectData } from '@ryunix/shared';
+import { SocketEvents, Room, SessionInfo } from '@ryunix/shared';
 import { RoomSummary } from '@ryunix/shared';
 import { reconnectionManager } from './services/ReconnectionManager';
 
 interface SocketContextType {
     socket: Socket | null;
+    playerId: string | null; // Stable identity; use this (not socket.id) to find yourself in room.players
     isConnected: boolean;
     connectionStatus: 'connected' | 'reconnecting' | 'disconnected';
     reconnectAttempts: number;
@@ -38,16 +39,17 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [availableRooms, setAvailableRooms] = useState<RoomSummary[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [reconnectAttempts, setReconnectAttempts] = useState(0);
+    const [playerId, setPlayerId] = useState<string | null>(null);
 
     useEffect(() => {
         const serverUrl = import.meta.env.PROD ? '/' : 'http://localhost:3001';
 
         const newSocket = io(serverUrl, {
-            auth: {
-                sessionToken: reconnectionManager.getSessionToken()
-            },
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
+            // A function so every reconnect sends the latest token the server gave us
+            auth: (cb) => cb({ sessionToken: reconnectionManager.getSessionToken() }),
+            // Keep retrying: the server holds our seat for a while after a drop
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
         });
         setSocket(newSocket);
 
@@ -56,18 +58,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setIsConnected(true);
             setConnectionStatus('connected');
             setReconnectAttempts(0);
+        });
 
-            // Attempt to reconnect to previous room if available
-            const roomState = reconnectionManager.getRoomState();
-            if (roomState) {
-                console.log('[SocketContext] Attempting to reconnect to room:', roomState.roomId);
-                const reconnectData: ReconnectData = {
-                    sessionToken: reconnectionManager.getSessionToken(),
-                    roomId: roomState.roomId,
-                    playerId: roomState.playerId
-                };
-                newSocket.emit(SocketEvents.RECONNECT, reconnectData);
-            }
+        // The server resumes our room automatically when it recognises the token
+        newSocket.on(SocketEvents.SESSION, (session: SessionInfo) => {
+            reconnectionManager.saveSessionToken(session.sessionToken);
+            setPlayerId(session.playerId);
         });
 
         newSocket.on('disconnect', () => {
@@ -76,7 +72,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setConnectionStatus('disconnected');
         });
 
-        newSocket.on('reconnect_attempt', (attempt: number) => {
+        // Reconnect events live on the manager, not the socket
+        newSocket.io.on('reconnect_attempt', (attempt: number) => {
             console.log('[SocketContext] Reconnection attempt:', attempt);
             setConnectionStatus('reconnecting');
             setReconnectAttempts(attempt);
@@ -92,14 +89,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         newSocket.on(SocketEvents.ROOM_UPDATED, (updatedRoom: Room) => {
             setRoom(updatedRoom);
             setError(null);
-
-            // Save room state for reconnection
-            if (updatedRoom && newSocket.id) {
-                const player = updatedRoom.players.find(p => p.socketId === newSocket.id);
-                if (player) {
-                    reconnectionManager.saveRoomState(updatedRoom.id, player.id, player.name);
-                }
-            }
         });
 
         newSocket.on(SocketEvents.ROOM_LIST, (rooms: RoomSummary[]) => {
@@ -108,17 +97,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         newSocket.on(SocketEvents.ERROR, (err: { message: string }) => {
             setError(err.message);
-
-            // Clear room state if reconnection failed
-            if (err.message.includes('reconnect')) {
-                reconnectionManager.clearRoomState();
-            }
         });
 
         newSocket.on(SocketEvents.KICKED, () => {
             alert('You have been kicked by the host.');
             setRoom(null);
-            reconnectionManager.clearRoomState();
         });
 
         return () => {
@@ -150,8 +133,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setRoom(null);
         if (socket) {
             socket.emit(SocketEvents.LEAVE_ROOM);
-            // Clear room state from reconnection manager
-            reconnectionManager.clearRoomState();
             // Also refresh list if we leave to menu
             listRooms();
         }
@@ -170,7 +151,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected, connectionStatus, reconnectAttempts, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
+        <SocketContext.Provider value={{ socket, playerId, isConnected, connectionStatus, reconnectAttempts, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>
             {children}
         </SocketContext.Provider>
     );

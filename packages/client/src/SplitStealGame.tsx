@@ -10,9 +10,9 @@ import { ChatComponent } from './ChatComponent';
 // but for now we infer from context or define usage types.
 
 export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
+    const { socket, room, playerId } = useSocket();
     const { playSound } = useAudio();
-    const myId = socket?.id;
+    const myId = playerId;
     const { round, trustPoints, pairings, decisions, history } = gameState;
 
     // Find my pair

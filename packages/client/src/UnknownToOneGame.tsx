@@ -26,8 +26,8 @@ interface UnknownToOneState {
 }
 
 export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
-    const myId = socket?.id;
+    const { socket, room, playerId } = useSocket();
+    const myId = playerId;
     const [wordInput, setWordInput] = useState('');
     const [guessInput, setGuessInput] = useState('');
     const [turnWordInput, setTurnWordInput] = useState('');

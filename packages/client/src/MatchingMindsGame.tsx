@@ -3,9 +3,9 @@ import { useSocket } from './SocketContext';
 import { SocketEvents, MatchingMindsState } from '@ryunix/shared';
 
 export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState }) => {
-    const { room, socket } = useSocket();
+    const { room, socket, playerId } = useSocket();
     const [myWord, setMyWord] = useState('');
-    const myId = socket?.id;
+    const myId = playerId;
 
     if (!room || !myId) return null;
 

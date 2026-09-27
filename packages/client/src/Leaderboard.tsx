@@ -39,6 +39,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
                                 <span className="font-medium text-gray-200 text-sm truncate max-w-[120px]" title={p.name}>
                                     {p.name}
                                 </span>
+                                {!p.connected && (
+                                    <span className="text-[10px] uppercase font-bold text-yellow-500/80" title="Disconnected, waiting for them to rejoin">
+                                        offline
+                                    </span>
+                                )}
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className={`font-mono font-bold ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-gray-500'

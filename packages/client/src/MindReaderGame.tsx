@@ -15,8 +15,8 @@ interface MindReaderState {
 }
 
 export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameState }) => {
-    const { socket, room } = useSocket();
-    const myId = socket?.id;
+    const { socket, room, playerId } = useSocket();
+    const myId = playerId;
     const [guessInput, setGuessInput] = useState('');
 
     // For manual setup

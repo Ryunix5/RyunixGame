@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, HIDDEN } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 
 interface TheLastWordState extends GameState {
@@ -63,6 +63,14 @@ export class TheLastWordGame implements GamePlugin {
             pendingAnswers: [],
             selectedPackages: ['general', 'pop-culture', 'geography', 'food'] // All by default
         } as TheLastWordState;
+    }
+
+    getPlayerView(state: TheLastWordState, viewerId: string): TheLastWordState {
+        // Keep answers secret while players are still thinking; the count stays visible
+        return {
+            ...state,
+            pendingAnswers: state.pendingAnswers.map(a => a.playerId === viewerId ? a : { ...a, text: HIDDEN }),
+        };
     }
 
     handleAction(state: TheLastWordState, senderId: string, action: any, dispatch?: (s: any) => void): TheLastWordState | null {

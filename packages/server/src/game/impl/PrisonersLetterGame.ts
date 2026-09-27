@@ -1,5 +1,5 @@
 import { Player } from '@ryunix/shared';
-import { GamePlugin, GameState } from '../GamePlugin';
+import { GamePlugin, GameState, maskRecord } from '../GamePlugin';
 
 interface PrisonersLetterState extends GameState {
     round: number;
@@ -32,6 +32,19 @@ export class PrisonersLetterGame implements GamePlugin {
             votes: {},
             scores,
             winnerIds: undefined
+        };
+    }
+
+    getPlayerView(state: PrisonersLetterState, viewerId: string): PrisonersLetterState {
+        // Players only ever see their own draft; the letter being read is exposed via currentMessage
+        const messages = state.messages[viewerId] !== undefined ? { [viewerId]: state.messages[viewerId] } : {};
+        if (state.phase === 'REVEAL') return { ...state, messages };
+        return {
+            ...state,
+            messages,
+            // The author stays anonymous until the reveal, except to themselves
+            currentReaderId: state.currentReaderId === viewerId ? viewerId : undefined,
+            votes: maskRecord(state.votes, viewerId),
         };
     }
 

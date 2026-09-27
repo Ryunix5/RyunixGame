@@ -2,11 +2,11 @@ import React from 'react';
 import { useSocket } from './SocketContext';
 
 export const ResultsView: React.FC = () => {
-    const { room, socket, leaveRoom, resetLobby } = useSocket();
+    const { room, leaveRoom, resetLobby, playerId } = useSocket();
 
     if (!room || !room.gameState || !room.gameState.results) return null;
 
-    const isHost = socket?.id === room.hostId || room.players.find(p => p.id === socket?.id)?.isHost;
+    const isHost = playerId === room.hostId;
 
     const results = room.gameState.results; // { [playerId: string]: number }
     const sortedPlayers = [...room.players].sort((a, b) => {

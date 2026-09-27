@@ -24,6 +24,8 @@ yarn-error.log*
 
 # Database
 content.db
+content.db-shm
+content.db-wal
 *.sqlite
 *.sqlite3
 

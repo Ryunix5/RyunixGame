@@ -1,0 +1,13 @@
+# Render Blueprint. Existing services configured in the Render dashboard don't read this file
+# automatically; it documents the working setup and can be used to create the service fresh.
+services:
+  - type: web
+    name: ryunixgame
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

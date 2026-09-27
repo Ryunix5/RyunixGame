@@ -60,6 +60,11 @@ const roomManager = new RoomManager();
 const gameRegistry = new GameRegistry();
 const gameRunner = new GameRunner(gameRegistry, room => broadcastRoom(room));
 
+// Health check for the host (Render pings this to know the service is up)
+app.get('/healthz', (_req, res) => {
+    res.json({ ok: true });
+});
+
 // Serve static frontend files
 const clientDist = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(clientDist)) {

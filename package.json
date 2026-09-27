@@ -8,7 +8,12 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev --workspace=@ryunix/server",
     "dev:client": "npm run dev --workspace=@ryunix/client",
-    "build": "npm run build --workspace=@ryunix/shared && npm run build --workspace=@ryunix/server && npm run build --workspace=@ryunix/client"
+    "build": "npm run build --workspace=@ryunix/shared && npm run build --workspace=@ryunix/server && npm run build --workspace=@ryunix/client",
+    "start": "npm start --workspace=@ryunix/server",
+    "test": "npm test --workspace=@ryunix/server -- --silent && npm test --workspace=@ryunix/client -- --run"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

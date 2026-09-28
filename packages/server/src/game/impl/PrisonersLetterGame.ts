@@ -78,10 +78,9 @@ export class PrisonersLetterGame implements GamePlugin {
                 // Allow vote change? Or lock? Let's Lock.
                 if (state.votes[senderId]) return null;
 
-                // Cannot vote for self? Rules don't say, but logically makes sense or allows bluffing? 
-                // "Players vote on who they think wrote which message" -> implies guessing others.
-                // Usually in these games you can't vote for yourself.
-                if (targetId === senderId) return null;
+                // The author sits the vote out, and you can't vote for yourself or someone not playing
+                if (senderId === state.currentReaderId) return null;
+                if (targetId === senderId || !(targetId in state.scores)) return null;
 
                 state.votes[senderId] = targetId;
 

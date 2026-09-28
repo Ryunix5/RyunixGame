@@ -70,13 +70,13 @@ export class UnknownToOneGame implements GamePlugin {
 
         if (state.phase === 'SETUP') {
             if (senderId !== ctx.hostId) return null; // The host picks the word
-            // Only host can set word? Or random leader?
-            // "everyone will be informed a specific thing (set by the room leader)"
-            // Assuming Host is Room Leader.
             const word = cleanText(action.word);
             if (action.type === 'set_word' && word) {
                 state.secretWord = word;
-                this.startRound(state, Object.keys(state.scores));
+                // The host typed the word, so they can't be the one who doesn't know it
+                const everyone = Object.keys(state.scores);
+                const candidates = everyone.filter(id => id !== senderId);
+                this.startRound(state, everyone, candidates.length > 0 ? candidates : everyone);
                 return state;
             }
 
@@ -150,7 +150,7 @@ export class UnknownToOneGame implements GamePlugin {
 
         if (state.phase === 'REVEAL') {
             if (action.type === 'next_round') {
-                // Anyone can trigger next round for now, or require host.
+                if (senderId !== ctx.hostId) return null; // Otherwise anyone could cut the reveal short
                 state.round++;
                 state.phase = 'SETUP';
                 state.secretWord = undefined;
@@ -221,10 +221,10 @@ export class UnknownToOneGame implements GamePlugin {
         }
     }
 
-    private startRound(state: UnknownToOneState, playerIds: string[]) {
+    private startRound(state: UnknownToOneState, playerIds: string[], blackenedCandidates: string[] = playerIds) {
         // Assign Blackened
-        const idx = Math.floor(Math.random() * playerIds.length);
-        state.blackenedId = playerIds[idx];
+        const idx = Math.floor(Math.random() * blackenedCandidates.length);
+        state.blackenedId = blackenedCandidates[idx];
         state.phase = 'DEBATE';
         
         // Randomize turn order

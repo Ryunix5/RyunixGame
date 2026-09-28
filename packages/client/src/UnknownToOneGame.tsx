@@ -475,9 +475,13 @@ export const UnknownToOneGame: React.FC<{ gameState: UnknownToOneState }> = ({ g
                             </div>
 
                             {!gameState.winnerIds ? (
-                                <button onClick={nextRound} className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform">
-                                    NEXT ROUND
-                                </button>
+                                isHost ? (
+                                    <button onClick={nextRound} className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform">
+                                        NEXT ROUND
+                                    </button>
+                                ) : (
+                                    <p className="text-gray-400 animate-pulse">Waiting for the host to start the next round...</p>
+                                )
                             ) : (
                                 <div className="p-8 bg-yellow-900/30 border border-yellow-500 rounded-2xl">
                                     <h3 className="text-3xl font-black text-yellow-400 mb-2">GAME OVER</h3>

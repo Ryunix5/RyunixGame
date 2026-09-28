@@ -194,6 +194,48 @@ describe('GameRunner', () => {
         });
     });
 
+    describe('game rules', () => {
+        it("Prisoners' Letter: the author can't vote, so a round waits for every other player", () => {
+            const room = makeRoom('a', 'b', 'c');
+            runner.start(room, 'prisoners-letter', {});
+            ['a', 'b', 'c'].forEach(id => runner.handleAction(room, id, { type: 'submit_message', message: `from ${id}` }));
+            const author = room.gameState.currentReaderId;
+            const [v1, v2] = ['a', 'b', 'c'].filter(id => id !== author);
+
+            runner.handleAction(room, author, { type: 'vote', targetId: v1 });
+            expect(room.gameState.votes[author]).toBeUndefined();
+
+            runner.handleAction(room, v1, { type: 'vote', targetId: 'nobody' });
+            runner.handleAction(room, v1, { type: 'vote', targetId: author });
+            expect(room.gameState.phase).toBe('VOTING'); // still waiting for v2
+
+            runner.handleAction(room, v2, { type: 'vote', targetId: author });
+            expect(room.gameState.phase).toBe('REVEAL');
+        });
+
+        it('Unknown to One: the host who typed the word is never the blackened player', () => {
+            for (let i = 0; i < 30; i++) {
+                const room = makeRoom('a', 'b', 'c');
+                runner.start(room, 'unknown-to-one', {});
+                runner.handleAction(room, 'a', { type: 'set_word', word: 'Pizza' });
+                expect(room.gameState.blackenedId).not.toBe('a');
+                runner.stop(room.id);
+            }
+        });
+
+        it('Unknown to One: only the host can move on from the reveal', () => {
+            const room = makeRoom('a', 'b', 'c');
+            runner.start(room, 'unknown-to-one', {});
+            runner.handleAction(room, 'a', { type: 'set_word', word: 'Pizza' });
+            room.gameState.phase = 'REVEAL';
+
+            runner.handleAction(room, 'b', { type: 'next_round' });
+            expect(room.gameState.phase).toBe('REVEAL');
+            runner.handleAction(room, 'a', { type: 'next_round' });
+            expect(room.gameState.phase).toBe('SETUP');
+        });
+    });
+
     describe('players leaving mid-game', () => {
         it('ends the game when too few players remain', () => {
             const room = makeRoom('a', 'b', 'c');

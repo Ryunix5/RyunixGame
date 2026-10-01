@@ -15,6 +15,8 @@ import { Button } from './components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from './VoiceContext';
 import { PackageSelector } from './components/PackageSelector';
+import { useToast } from './components/Toast';
+import { inviteLinkFor } from './invite';
 
 const VoiceControls: React.FC = () => {
     const { joined, joinVoice, leaveVoice, isMuted, toggleMute } = useVoice();
@@ -44,6 +46,7 @@ export const RoomView: React.FC = () => {
     const { playSound } = useAudio();
     const { leaveVoice, joined } = useVoice();
     const [selectedPackageId, setSelectedPackageId] = React.useState<string>('general');
+    const { showToast } = useToast();
 
     // Play victory sound when game finishes
     const prevStatusRef = React.useRef<RoomStatus>();
@@ -91,6 +94,25 @@ export const RoomView: React.FC = () => {
         socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId });
     };
 
+    // Phones get the native share sheet (straight into a group chat); elsewhere copy the link
+    const shareInvite = async () => {
+        const url = inviteLinkFor(room.id);
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Ryunix Games', text: `Join my lobby (${room.id})`, url });
+                return;
+            } catch (err) {
+                if ((err as DOMException)?.name === 'AbortError') return; // They closed the share sheet
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            showToast('Invite link copied. Paste it in your group chat!', 'success');
+        } catch {
+            showToast(`Share this link: ${url}`, 'info', 8000);
+        }
+    };
+
     const handleKick = (playerId: string) => {
         if (!isHost || !socket) return;
         if (confirm('Are you sure you want to kick this player?')) {
@@ -111,6 +133,9 @@ export const RoomView: React.FC = () => {
                         <span className="font-sans font-bold text-2xl text-white bg-black px-2 border-2 border-slate-700">
                             {room.id}
                         </span>
+                        <Button size="sm" onClick={shareInvite} className="pixel-btn px-3 text-lg">
+                            INVITE
+                        </Button>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 md:gap-4">

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from './SocketContext';
 import { Button } from './components/ui/Button';
+import { readInviteCode, clearInviteCode } from './invite';
+
+const MAX_NAME_LENGTH = 20; // Matches the server's ROOM_CONFIG.MAX_NAME_LENGTH
 
 export const Home: React.FC = () => {
     const { createRoom, joinRoom, listRooms, availableRooms, error } = useSocket();
     const [name, setName] = useState('');
-    const [roomId, setRoomId] = useState('');
-    const [mode, setMode] = useState<'menu' | 'join' | 'create'>('menu');
+    // Opened from an invite link (?room=CODE): go straight to a one-tap join screen
+    const [inviteCode] = useState(readInviteCode);
+    const [roomId, setRoomId] = useState(inviteCode ?? '');
+    const [mode, setMode] = useState<'menu' | 'join' | 'create' | 'invite'>(inviteCode ? 'invite' : 'menu');
 
     // Load saved name from localStorage on mount
     useEffect(() => {
@@ -38,8 +43,9 @@ export const Home: React.FC = () => {
 
     const handleJoin = (id?: string) => {
         const targetId = id || roomId;
-        if (!name || !targetId) return;
-        joinRoom(targetId.toUpperCase(), name);
+        if (!name.trim() || !targetId) return;
+        joinRoom(targetId.trim().toUpperCase(), name);
+        clearInviteCode(); // A refresh later should resume the session, not re-run the invite
     };
 
     return (
@@ -61,6 +67,39 @@ export const Home: React.FC = () => {
             )}
 
             <div className="w-full max-w-md lg:pixel-box lg:p-8 space-y-4">
+                {mode === 'invite' && (
+                    <form
+                        className="flex flex-col gap-6 w-full ani-fade-in"
+                        onSubmit={(e) => { e.preventDefault(); handleJoin(); }}
+                    >
+                        <p className="text-center font-sans text-2xl text-slate-300 uppercase">
+                            You're invited to <span className="font-pixel text-[#00e5ff] text-lg block mt-2">LOBBY_{roomId}</span>
+                        </p>
+                        <div className="space-y-2">
+                            <label className="text-lg font-pixel text-[#00e5ff] uppercase tracking-widest block mb-2">&gt; YOUR NAME</label>
+                            <input
+                                type="text"
+                                placeholder="ENTER NAME_"
+                                maxLength={MAX_NAME_LENGTH}
+                                autoFocus={!name}
+                                value={name}
+                                onChange={(e) => handleNameChange(e.target.value)}
+                                className="w-full p-4 bg-black border-4 border-white focus:border-[#ff007f] rounded-none text-white placeholder-slate-700 focus:outline-none font-sans font-bold text-2xl transition-colors text-center uppercase"
+                            />
+                        </div>
+                        <Button type="submit" size="lg" disabled={!name.trim()} className="w-full h-16 text-xl pixel-btn">
+                            JOIN PARTY
+                        </Button>
+                        <button
+                            type="button"
+                            onClick={() => { clearInviteCode(); setRoomId(''); setMode('menu'); }}
+                            className="text-lg font-sans text-slate-400 hover:text-white uppercase font-bold tracking-widest"
+                        >
+                            <span className="text-[#ff007f] mr-2">{"<"}</span> NOT NOW
+                        </button>
+                    </form>
+                )}
+
                 {mode === 'menu' && (
                     <div className="flex flex-col gap-6 w-full ani-fade-in">
                         <Button
@@ -85,6 +124,7 @@ export const Home: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="ENTER NAME_"
+                                maxLength={MAX_NAME_LENGTH}
                                 value={name}
                                 onChange={(e) => handleNameChange(e.target.value)}
                                 className="w-full p-4 bg-black border-4 border-white focus:border-[#ff007f] rounded-none text-white placeholder-slate-700 focus:outline-none font-sans font-bold text-2xl transition-colors text-center uppercase"
@@ -111,6 +151,7 @@ export const Home: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="ENTER NAME_"
+                                maxLength={MAX_NAME_LENGTH}
                                 value={name}
                                 onChange={(e) => handleNameChange(e.target.value)}
                                 className="w-full p-4 bg-black border-4 border-white focus:border-[#ff007f] rounded-none text-white placeholder-slate-700 focus:outline-none font-sans font-bold text-2xl transition-colors text-center uppercase"

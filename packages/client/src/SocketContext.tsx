@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SocketEvents, Room, SessionInfo } from '@ryunix/shared';
 import { RoomSummary } from '@ryunix/shared';
@@ -117,46 +117,33 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         };
     }, []);
 
-    const createRoom = (hostName: string) => {
-        if (socket) {
-            socket.emit(SocketEvents.CREATE_ROOM, { hostName });
-        } else {
-            console.error('[SocketContext] Socket not available!');
-        }
-    };
+    // Stable identities: components put these in effect dependencies (Home polls listRooms), and a
+    // new function every render made that effect re-fire on every room list reply, in a loop.
+    const createRoom = useCallback((hostName: string) => {
+        socket?.emit(SocketEvents.CREATE_ROOM, { hostName });
+    }, [socket]);
 
-    const joinRoom = (roomId: string, playerName: string) => {
-        if (socket) {
-            socket.emit(SocketEvents.JOIN_ROOM, { roomId, playerName });
-        }
-    };
+    const joinRoom = useCallback((roomId: string, playerName: string) => {
+        socket?.emit(SocketEvents.JOIN_ROOM, { roomId, playerName });
+    }, [socket]);
 
-    const resetLobby = () => {
-        if (socket && room) {
-            socket.emit(SocketEvents.RESET_LOBBY, { roomId: room.id });
-        }
-    };
+    const listRooms = useCallback(() => {
+        socket?.emit(SocketEvents.LIST_ROOMS);
+    }, [socket]);
 
-    const leaveRoom = () => {
+    const roomId = room?.id;
+    const resetLobby = useCallback(() => {
+        if (socket && roomId) socket.emit(SocketEvents.RESET_LOBBY, { roomId });
+    }, [socket, roomId]);
+
+    const leaveRoom = useCallback(() => {
         setRoom(null);
-        if (socket) {
-            socket.emit(SocketEvents.LEAVE_ROOM);
-            // Also refresh list if we leave to menu
-            listRooms();
-        }
-    }
+        socket?.emit(SocketEvents.LEAVE_ROOM);
+    }, [socket]);
 
-    const listRooms = () => {
-        if (socket) {
-            socket.emit(SocketEvents.LIST_ROOMS);
-        }
-    }
-
-    const sendChat = (message: string) => {
-        if (socket && room) {
-            socket.emit(SocketEvents.SEND_CHAT, { roomId: room.id, message });
-        }
-    }
+    const sendChat = useCallback((message: string) => {
+        if (socket && roomId) socket.emit(SocketEvents.SEND_CHAT, { roomId, message });
+    }, [socket, roomId]);
 
     return (
         <SocketContext.Provider value={{ socket, playerId, isConnected, connectionStatus, reconnectAttempts, createRoom, joinRoom, leaveRoom, resetLobby, listRooms, sendChat, room, availableRooms, error }}>

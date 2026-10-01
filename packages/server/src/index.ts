@@ -33,7 +33,7 @@ const EVENT_RATE_CATEGORY: Record<string, SocketRateCategory> = {
     [SocketEvents.SELECT_GAME]: 'lobby',
     [SocketEvents.START_GAME]: 'lobby',
     [SocketEvents.RESET_LOBBY]: 'lobby',
-    [SocketEvents.LIST_ROOMS]: 'lobby',
+    [SocketEvents.LIST_ROOMS]: 'roomList',
     getAvailablePackages: 'lobby',
     [SocketEvents.GAME_ACTION]: 'game',
     [SocketEvents.SEND_CHAT]: 'chat',

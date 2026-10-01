@@ -49,7 +49,7 @@ export function PackageSelector({ kind, selectedPackageId, onSelectionChange }: 
 
     return (
         <div className="w-full h-full flex flex-col font-pixel text-slate-300">
-            <h3 className="text-xl font-bold text-[#ff007f] mb-2 uppercase tracking-widest border-b-2 border-slate-800 pb-2">
+            <h3 className="text-sm md:text-xl font-bold text-[#ff007f] mb-2 uppercase tracking-wider md:tracking-widest break-words border-b-2 border-slate-800 pb-2">
                 &gt; CONTENT_PACKAGES
             </h3>
 
@@ -88,7 +88,7 @@ export function PackageSelector({ kind, selectedPackageId, onSelectionChange }: 
                                     <div className="absolute top-0 left-0 w-2 h-full bg-[#00e5ff]" />
                                 )}
                                 <div className={`flex-1 ${isSelected ? 'ml-3' : 'ml-1'}`}>
-                                    <div className={`text-lg uppercase ${isSelected ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
+                                    <div className={`text-sm md:text-lg uppercase ${isSelected ? 'text-[#00e5ff]' : 'text-slate-400'}`}>
                                         {pkg.name}
                                     </div>
                                     <div className="text-sm font-sans font-bold text-slate-500">

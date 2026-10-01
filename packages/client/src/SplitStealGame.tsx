@@ -36,9 +36,9 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
     return (
         <div className="flex flex-col lg:flex-row gap-6 w-full">
             {/* Main Game Area */}
-            <div className="flex-1 flex flex-col items-center bg-gray-900 p-8 rounded-xl border border-gray-700">
-                <header className="flex justify-between w-full mb-8 border-b border-gray-700 pb-4">
-                    <h2 className="text-2xl font-bold text-gray-200">SPLIT OR STEAL <span className="text-cyan-400">ROUND {round}</span></h2>
+            <div className="flex-1 flex flex-col items-center bg-black p-4 md:p-8 border-2 border-slate-800">
+                <header className="flex flex-wrap gap-2 justify-between items-baseline w-full mb-8 border-b border-slate-800 pb-4">
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-200">SPLIT OR STEAL <span className="text-cyan-400 whitespace-nowrap">ROUND {round}</span></h2>
                     <div className="text-xl font-mono">
                         TRUST: <span className="text-green-400">{trustPoints[myId || '']}</span>
                     </div>
@@ -50,10 +50,10 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                             {/* MY CARD */}
                             <div className="flex flex-col items-center">
                                 <div className={`
-                                    w-48 h-64 rounded-xl border-4 flex items-center justify-center relative transition-all duration-500 transform
+                                    w-48 h-64 border-4 flex items-center justify-center relative transition-all duration-500 transform
                                     ${gameState.phase === 'REVEAL' && myDecision === 'split' ? 'border-blue-500 bg-blue-900/20' : ''}
                                     ${gameState.phase === 'REVEAL' && myDecision === 'steal' ? 'border-red-500 bg-red-900/20' : ''}
-                                    ${gameState.phase === 'DECISION' && myDecision ? 'border-slate-500 bg-slate-800' : 'border-slate-700 bg-slate-900'}
+                                    ${gameState.phase === 'DECISION' && myDecision ? 'border-slate-500 bg-[#111]' : 'border-slate-800 bg-black'}
                                 `}>
                                     {gameState.phase === 'REVEAL' ? (
                                         <div className="text-center">
@@ -92,10 +92,10 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                             {/* OPPONENT CARD */}
                             <div className="flex flex-col items-center">
                                 <div className={`
-                                    w-48 h-64 rounded-xl border-4 flex items-center justify-center relative transition-all duration-500 transform
+                                    w-48 h-64 border-4 flex items-center justify-center relative transition-all duration-500 transform
                                     ${gameState.phase === 'REVEAL' && opponentDecision === 'split' ? 'border-blue-500 bg-blue-900/20' : ''}
                                     ${gameState.phase === 'REVEAL' && opponentDecision === 'steal' ? 'border-red-500 bg-red-900/20' : ''}
-                                    ${gameState.phase === 'DECISION' && opponentDecision ? 'border-slate-500 bg-slate-800' : 'border-slate-700 bg-slate-900'}
+                                    ${gameState.phase === 'DECISION' && opponentDecision ? 'border-slate-500 bg-[#111]' : 'border-slate-800 bg-black'}
                                 `}>
                                     {gameState.phase === 'REVEAL' ? (
                                         <div className="text-center">
@@ -119,7 +119,7 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                             </div>
                         </>
                     ) : (
-                        <div className="bg-yellow-900/20 border border-yellow-700/50 p-8 rounded-xl text-center">
+                        <div className="bg-yellow-900/20 border-2 border-yellow-700/50 p-8 text-center">
                             <h3 className="text-xl font-bold text-yellow-500 mb-2">SITTING OUT</h3>
                             <p className="text-yellow-200/60">Odd number of players. You are spectating this round.</p>
                         </div>
@@ -127,13 +127,13 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                 </div>
 
                 {gameState.phase === 'DECISION' && myPair && (
-                    <div className="mt-8 flex gap-8">
+                    <div className="mt-8 grid grid-cols-2 gap-3 md:gap-8 w-full max-w-md">
                         <button
                             onClick={() => sendDecision('split')}
                             disabled={!!myDecision}
                             className={`
-                                group relative px-8 py-6 rounded-xl transition-all w-52 border-2
-                                ${myDecision === 'split' ? 'bg-blue-600 border-blue-400 ring-2 ring-blue-400 ring-offset-4 ring-offset-slate-900' : 'bg-slate-800 border-slate-700 hover:border-blue-500 hover:bg-slate-800'}
+                                group relative px-3 py-5 md:px-8 md:py-6 transition-all w-full border-2
+                                ${myDecision === 'split' ? 'bg-blue-600 border-blue-400 ring-2 ring-blue-400 ring-offset-4 ring-offset-black' : 'bg-[#111] border-slate-800 hover:border-blue-500 hover:bg-[#111]'}
                                 disabled:opacity-50 disabled:cursor-not-allowed
                             `}>
                             <span className={`block text-3xl font-black mb-1 ${myDecision === 'split' ? 'text-white' : 'text-blue-500 group-hover:text-blue-400'}`}>SPLIT</span>
@@ -144,8 +144,8 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                             onClick={() => sendDecision('steal')}
                             disabled={!!myDecision}
                             className={`
-                                group relative px-8 py-6 rounded-xl transition-all w-52 border-2
-                                ${myDecision === 'steal' ? 'bg-red-600 border-red-400 ring-2 ring-red-400 ring-offset-4 ring-offset-slate-900' : 'bg-slate-800 border-slate-700 hover:border-red-500 hover:bg-slate-800'}
+                                group relative px-3 py-5 md:px-8 md:py-6 transition-all w-full border-2
+                                ${myDecision === 'steal' ? 'bg-red-600 border-red-400 ring-2 ring-red-400 ring-offset-4 ring-offset-black' : 'bg-[#111] border-slate-800 hover:border-red-500 hover:bg-[#111]'}
                                 disabled:opacity-50 disabled:cursor-not-allowed
                             `}>
                             <span className={`block text-3xl font-black mb-1 ${myDecision === 'steal' ? 'text-white' : 'text-red-500 group-hover:text-red-400'}`}>STEAL</span>
@@ -159,8 +159,8 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
             <div className="w-full lg:w-80 flex flex-col gap-6">
                 <Leaderboard players={room!.players} scores={trustPoints} />
 
-                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex-1 overflow-y-auto min-h-[200px]">
-                    <h3 className="text-gray-400 font-bold mb-3 uppercase text-xs tracking-wider border-b border-gray-700 pb-2">Round History</h3>
+                <div className="bg-[#111] p-4 border-2 border-slate-800 flex-1 overflow-y-auto min-h-[200px]">
+                    <h3 className="text-gray-400 font-bold mb-3 uppercase text-xs tracking-wider border-b border-slate-800 pb-2">Round History</h3>
                     <div className="space-y-2 text-sm">
                         {history.slice().reverse().map((h: any, i: number) => {
                             const isMeP1 = h.p1 === myId;
@@ -171,7 +171,7 @@ export const SplitStealGameComponent: React.FC<{ gameState: any }> = ({ gameStat
                             const oppName = room?.players.find(p => p.id === (isMeP1 ? h.p2 : h.p1))?.name;
 
                             return (
-                                <div key={i} className="flex justify-between border-b border-gray-700/50 pb-1 last:border-0">
+                                <div key={i} className="flex justify-between border-b border-slate-800/50 pb-1 last:border-0">
                                     <span className="text-gray-300">vs {oppName}</span>
                                     <div className="flex gap-2">
                                         <span className={`font-bold ${myMove === 'split' ? 'text-blue-400' : 'text-red-400'}`}>{myMove?.toUpperCase().slice(0, 1)}</span>

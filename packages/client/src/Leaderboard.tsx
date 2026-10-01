@@ -17,8 +17,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
     const topValue = Math.max(0, ...players.map(valueOf));
 
     return (
-        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 w-full">
-            <h3 className="text-gray-400 font-bold mb-3 uppercase text-xs tracking-wider border-b border-gray-700 pb-2 flex justify-between">
+        <div className="bg-[#111] p-4 border-2 border-slate-800 w-full">
+            <h3 className="text-gray-400 font-bold mb-3 uppercase text-xs tracking-wider border-b border-slate-800 pb-2 flex justify-between">
                 <span>{scores ? 'Leaderboard' : 'Scoreboard'}</span>
                 <span>{scores ? 'PTS' : 'WINS'}</span>
             </h3>
@@ -28,7 +28,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
                     const isLeader = !scores && score > 0 && score === topValue;
 
                     return (
-                        <div key={p.id} className={`flex items-center justify-between p-2 rounded ${index === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : 'hover:bg-gray-700/50'
+                        <div key={p.id} className={`flex items-center justify-between p-2 ${index === 0 ? 'bg-yellow-500/10 border-2 border-yellow-500/20' : 'hover:bg-gray-700/50'
                             }`}>
                             <div className="flex items-center gap-2">
                                 <span className={`font-mono text-sm w-4 text-center ${index === 0 ? 'text-yellow-400 font-bold' :
@@ -52,7 +52,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
                                 {isHost && onKick && myId !== p.id && (
                                     <button
                                         onClick={() => onKick(p.id)}
-                                        className="text-xs bg-red-900/50 hover:bg-red-600 text-red-200 px-2 py-1 border border-red-800 rounded font-bold uppercase transition"
+                                        className="text-xs bg-red-900/50 hover:bg-red-600 text-red-200 px-2 py-1 border-2 border-red-800 font-bold uppercase transition"
                                     >
                                         Kick
                                     </button>

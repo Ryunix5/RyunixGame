@@ -73,7 +73,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
     };
 
     return (
-        <div className="flex flex-col items-center w-full bg-slate-950 p-8 rounded-xl border border-slate-800 min-h-[600px] text-slate-200 shadow-2xl">
+        <div className="flex flex-col items-center w-full bg-black p-8 border-2 border-slate-800 min-h-[600px] text-slate-200">
             <header className="mb-8 text-center">
                 <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-500 mb-2">
                     MIND READER
@@ -86,19 +86,19 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
 
             <div className="w-full max-w-5xl">
                 {gameState.phase === 'SETUP' && (
-                    <div className="bg-slate-900 p-8 rounded-2xl border border-slate-700 animate-in fade-in">
+                    <div className="bg-black p-8 border-2 border-slate-800 animate-in fade-in">
                         {isHost ? (
                             <div className="space-y-6">
                                 <div className="flex justify-center gap-4 mb-8">
                                     <button
                                         onClick={() => setMode('AUTO')}
-                                        className={`px-6 py-3 rounded-lg font-bold border-2 transition-all ${gameState.setupMode === 'AUTO' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                                        className={`px-6 py-3 font-bold border-2 transition-all ${gameState.setupMode === 'AUTO' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-[#111] border-slate-600 text-slate-400'}`}
                                     >
                                         AUTO (Random Words)
                                     </button>
                                     <button
                                         onClick={() => setMode('MANUAL')}
-                                        className={`px-6 py-3 rounded-lg font-bold border-2 transition-all ${gameState.setupMode === 'MANUAL' ? 'bg-pink-600 border-pink-400 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                                        className={`px-6 py-3 font-bold border-2 transition-all ${gameState.setupMode === 'MANUAL' ? 'bg-pink-600 border-pink-400 text-white' : 'bg-[#111] border-slate-600 text-slate-400'}`}
                                     >
                                         MANUAL (Host Sets)
                                     </button>
@@ -107,7 +107,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                 {gameState.setupMode === 'MANUAL' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {room.players.map(p => (
-                                            <div key={p.id} className="flex items-center gap-4 bg-slate-800 p-4 rounded-lg">
+                                            <div key={p.id} className="flex items-center gap-4 bg-[#111] p-4">
                                                 <span className="font-bold w-1/3 truncate">{p.name}</span>
                                                 <input
                                                     maxLength={INPUT_LIMITS.GAME_TEXT}
@@ -115,7 +115,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                                     value={manualWords[p.id] || gameState.words[p.id] || ''}
                                                     onChange={e => assignWord(p.id, e.target.value)}
                                                     placeholder="Assign Secret Word"
-                                                    className="flex-1 bg-slate-950 border border-slate-700 rounded p-2 text-white focus:border-pink-500 outline-none"
+                                                    className="flex-1 bg-black border-2 border-slate-800 p-2 text-white focus:border-pink-500 outline-none"
                                                 />
                                             </div>
                                         ))}
@@ -124,7 +124,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
 
                                 <button
                                     onClick={startGame}
-                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-pink-600 rounded-xl font-black text-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-900/50"
+                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-pink-600 font-black text-xl hover:scale-[1.02] transition-transform shadow-indigo-900/50"
                                 >
                                     START GAME
                                 </button>
@@ -143,14 +143,14 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                         <div className="flex-1 space-y-6">
                             {/* Pairing Info */}
                             {gameState.pairings.find(p => p.includes(myId || '')) ? (
-                                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 text-center">
+                                <div className="bg-black p-6 border-2 border-slate-800 text-center">
                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Your Mission</h3>
 
-                                    <div className="flex items-center justify-center gap-8 mb-8">
+                                    <div className="flex items-center justify-center gap-3 md:gap-8 mb-8">
                                         <div className="text-center">
                                             <div className="w-16 h-16 bg-indigo-900/50 rounded-full flex items-center justify-center text-2xl mx-auto mb-2">🧠</div>
                                             <p className="font-bold text-indigo-400">YOU</p>
-                                            <p className="text-2xl font-black text-white bg-slate-800 px-4 py-2 rounded mt-2 border border-slate-600">
+                                            <p className="text-lg md:text-2xl font-black text-white bg-[#111] px-3 md:px-4 py-2 mt-2 border-2 border-slate-600 break-words max-w-[9rem] md:max-w-none">
                                                 {gameState.words[myId || ''] || '???'}
                                             </p>
                                             <p className="text-xs text-slate-500 mt-1">Your Secret Word</p>
@@ -167,14 +167,14 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                                     return room.players.find(p => p.id === oppId)?.name || 'Unknown';
                                                 })()}
                                             </p>
-                                            <div className="text-2xl font-black text-transparent bg-slate-800 px-4 py-2 rounded mt-2 border border-slate-600 animate-pulse">
+                                            <div className="text-2xl font-black text-transparent bg-[#111] px-4 py-2 mt-2 border-2 border-slate-600 animate-pulse">
                                                 ?????
                                             </div>
                                             <p className="text-xs text-slate-500 mt-1">Guess Their Word</p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                    <div className="bg-black p-4 border-2 border-slate-800">
                                         <h4 className="font-bold mb-2">Make a Guess</h4>
                                         <div className="flex gap-2">
                                             <input
@@ -182,11 +182,11 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                                 value={guessInput}
                                                 onChange={e => setGuessInput(e.target.value)}
                                                 placeholder="Is it... ?"
-                                                className="flex-1 bg-slate-900 border border-slate-700 rounded p-3 focus:border-indigo-500 outline-none"
+                                                className="flex-1 min-w-0 bg-black border-2 border-slate-800 p-3 focus:border-indigo-500 outline-none"
                                             />
                                             <button
                                                 onClick={submitGuess}
-                                                className="bg-indigo-600 hover:bg-indigo-500 px-6 rounded font-bold"
+                                                className="bg-indigo-600 hover:bg-indigo-500 px-4 md:px-6 font-bold shrink-0"
                                             >
                                                 GUESS
                                             </button>
@@ -200,7 +200,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                                     </div>
                                 </div>
                             ) : (
-                                <div className="p-12 text-center bg-slate-900 rounded-2xl border border-yellow-700/50">
+                                <div className="p-12 text-center bg-black border-2 border-yellow-700/50">
                                     <h3 className="text-2xl font-bold text-yellow-500 mb-2">Odd One Out</h3>
                                     <p className="text-slate-400">You are sitting this round out. Watch and learn!</p>
                                 </div>
@@ -215,7 +215,7 @@ export const MindReaderGame: React.FC<{ gameState: MindReaderState }> = ({ gameS
                 )}
 
                 {gameState.phase === 'GAME_OVER' && (
-                    <div className="text-center bg-slate-900 p-8 rounded-2xl border border-indigo-500/50 animate-in zoom-in">
+                    <div className="text-center bg-black p-8 border-2 border-indigo-500/50 animate-in zoom-in">
                         <h3 className="text-5xl font-black text-white mb-6">GAME OVER</h3>
                         <div className="text-2xl mb-8">
                             Winner: <span className="text-pink-400 font-bold">

@@ -39,7 +39,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
     // SUBMITTING Phase
     if (gameState.phase === 'SUBMITTING') {
         return (
-            <div className="flex flex-col items-center w-full bg-gray-900 p-8 rounded-xl border border-gray-700 min-h-[500px]">
+            <div className="flex flex-col items-center w-full bg-black p-8 border-2 border-slate-800 min-h-[500px]">
                 <div className="text-center mb-8">
                     <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-2">Round {gameState.currentRound}</h2>
                     <p className="text-gray-400 text-lg">
@@ -59,13 +59,13 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
                             onKeyDown={handleKeyDown}
                             placeholder="Type your association..."
                             disabled={hasSubmitted}
-                            className="flex-1 bg-gray-800 border border-gray-600 rounded-lg p-4 text-white text-lg focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
+                            className="flex-1 min-w-0 bg-[#111] border-2 border-slate-600 p-4 text-white text-lg focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
                             autoFocus
                         />
                         <button
                             onClick={submitWord}
                             disabled={!myWord.trim() || hasSubmitted}
-                            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 rounded-lg disabled:opacity-50 transition-colors"
+                            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 md:px-8 shrink-0 disabled:opacity-50 transition-colors"
                         >
                             {hasSubmitted ? '✓ Submitted' : 'Submit'}
                         </button>
@@ -96,7 +96,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
         const currentRound = gameState.rounds[gameState.rounds.length - 1];
 
         return (
-            <div className="flex flex-col items-center w-full bg-gray-900 p-8 rounded-xl border border-gray-700 min-h-[500px]">
+            <div className="flex flex-col items-center w-full bg-black p-8 border-2 border-slate-800 min-h-[500px]">
                 <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Round {gameState.currentRound} Results</h2>
 
                 <div className="w-full max-w-2xl mb-6">
@@ -104,7 +104,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
                         {currentRound.submissions.map((sub, i) => (
                             <div
                                 key={i}
-                                className="bg-gray-800 p-4 rounded-lg border border-gray-700 animate-in slide-in-from-bottom fade-in"
+                                className="bg-[#111] p-4 border-2 border-slate-800 animate-in slide-in-from-bottom fade-in"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
                                 <p className="text-xs text-cyan-500 mb-1">{sub.playerName}</p>
@@ -127,7 +127,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
 
                 <button
                     onClick={nextRound}
-                    className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-3 rounded-lg transition-colors"
+                    className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-3 transition-colors"
                 >
                     Next Round →
                 </button>
@@ -138,7 +138,7 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
     // RESULTS Phase
     if (gameState.phase === 'RESULTS') {
         return (
-            <div className="flex flex-col items-center w-full bg-gray-900 p-8 rounded-xl border border-gray-700 min-h-[500px]">
+            <div className="flex flex-col items-center w-full bg-black p-8 border-2 border-slate-800 min-h-[500px]">
                 {gameState.hasConverged ? (
                     <>
                         <h1 className="text-4xl font-black text-green-500 mb-4 animate-bounce">

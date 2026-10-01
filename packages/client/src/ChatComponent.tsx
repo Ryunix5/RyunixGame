@@ -43,8 +43,8 @@ export const ChatComponent = forwardRef<ChatComponentHandle, { height?: string }
     };
 
     return (
-        <div className={`flex flex-col bg-gray-900 border border-gray-700 rounded-xl overflow-hidden ${height}`}>
-            <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 font-bold text-gray-300 text-sm tracking-wider">
+        <div className={`flex flex-col bg-black border-2 border-slate-800 overflow-hidden ${height}`}>
+            <div className="bg-[#111] px-4 py-2 border-b border-slate-800 font-bold text-gray-300 text-sm tracking-wider">
                 CHAT
             </div>
 
@@ -58,18 +58,18 @@ export const ChatComponent = forwardRef<ChatComponentHandle, { height?: string }
                 <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSend} className="p-2 bg-gray-800 border-t border-gray-700 flex gap-2">
+            <form onSubmit={handleSend} className="p-2 bg-[#111] border-t border-slate-800 flex gap-2">
                 <input
                     maxLength={INPUT_LIMITS.CHAT}
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400"
+                    className="flex-1 bg-black border-2 border-slate-600 px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400"
                 />
                 <button
                     type="submit"
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-white font-bold text-xs uppercase transition-colors"
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase transition-colors"
                 >
                     Send
                 </button>

@@ -16,7 +16,7 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 const AppContent: React.FC = () => {
     const { room, connectionStatus, reconnectAttempts } = useSocket();
     return (
-        <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-cyan-500/30 relative overflow-x-hidden">
+        <div className="min-h-screen bg-black text-white font-sans selection:bg-cyan-500/30 relative overflow-x-hidden">
             <AnimatedBackground />
             <AudioControl />
             <ReconnectionBanner status={connectionStatus} retryCount={reconnectAttempts} />

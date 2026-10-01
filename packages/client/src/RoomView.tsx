@@ -248,7 +248,7 @@ export const RoomView: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-full max-w-screen-2xl mx-auto lg:p-12 lg:pixel-box lg:shadow-[12px_12px_0_0_#ff007f] min-h-[80vh] flex flex-col"
+                className="w-full max-w-screen-2xl mx-auto p-4 lg:p-12 lg:pixel-box lg:shadow-[12px_12px_0_0_#ff007f] min-h-[80vh] flex flex-col"
             >
                 <div className="flex flex-wrap gap-4 justify-between items-center mb-8 pb-4 border-b-4 border-slate-800">
                     <div className="flex items-center gap-4">

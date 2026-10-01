@@ -6,24 +6,25 @@ export const AudioControl: React.FC = () => {
     const { isMusicEnabled, toggleMusic, musicVolume, sfxVolume, setMusicVolume, setSFXVolume } = useAudio();
     const [isOpen, setIsOpen] = useState(false);
 
+    // Top-right: at the bottom it covered game buttons and the chat send button on phones
     return (
-        <div className="fixed bottom-4 right-4 z-50 font-pixel">
+        <div className="fixed top-3 right-3 md:top-4 md:right-4 z-50 font-pixel">
             <motion.button
                 onClick={() => setIsOpen(!isOpen)}
-                className="pixel-btn w-16 h-16 bg-black hover:bg-slate-900 border-4 border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#00e5ff] transition-colors"
+                className="pixel-btn w-12 h-12 md:w-16 md:h-16 bg-black hover:bg-slate-900 border-4 border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#00e5ff] transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
             >
-                <span className="text-3xl">🔊</span>
+                <span className="text-2xl md:text-3xl">🔊</span>
             </motion.button>
 
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-20 right-0 w-80 bg-black border-4 border-slate-800 shadow-[8px_8px_0_0_#ff007f] p-4"
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        className="absolute top-16 md:top-20 right-0 w-72 md:w-80 max-w-[calc(100vw-1.5rem)] bg-black border-4 border-slate-800 shadow-[8px_8px_0_0_#ff007f] p-4"
                     >
                         <h3 className="text-[#00e5ff] font-bold text-xl uppercase tracking-widest border-b-4 border-slate-800 pb-2 mb-4">
                             &gt; AUDIO_SETTINGS

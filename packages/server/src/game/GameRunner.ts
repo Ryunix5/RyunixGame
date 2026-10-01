@@ -83,10 +83,10 @@ export class GameRunner {
             room.status = RoomStatus.RESULTS;
             room.gameState = { ...room.gameState, results };
 
-            const { players, winnerId } = handleGameCompletion(results, room.players);
+            const { players, winnerIds } = handleGameCompletion(results, room.players);
             room.players = players;
             this.stop(room.id);
-            logger.info('Game completed', { roomId: room.id, winnerId });
+            logger.info('Game completed', { roomId: room.id, winnerIds });
         }
         this.onRoomChanged(room);
     }

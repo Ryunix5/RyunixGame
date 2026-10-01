@@ -67,8 +67,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
 
         // The server resumes our room automatically when it recognises the token
+        let knownPlayerId: string | null = null;
         newSocket.on(SocketEvents.SESSION, (session: SessionInfo) => {
             reconnectionManager.saveSessionToken(session.sessionToken);
+            // A different identity means the server no longer knows us (it restarted, or we were
+            // gone past the reconnect grace period), so the room on screen no longer exists.
+            if (knownPlayerId && knownPlayerId !== session.playerId && inRoomRef.current) {
+                setRoom(null);
+                showToast('That room has ended (the server restarted or you were away too long). Create or join a new one.', 'warning', 8000);
+            }
+            knownPlayerId = session.playerId;
             setPlayerId(session.playerId);
         });
 

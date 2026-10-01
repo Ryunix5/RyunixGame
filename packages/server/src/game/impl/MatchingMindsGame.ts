@@ -155,8 +155,8 @@ export class MatchingMindsGame implements GamePlugin {
         const scores: { [playerId: string]: number } = {};
 
         if (!mmState.hasConverged) {
-            // Partial scores for not converging
-            players.forEach(p => { scores[p.id] = 10; });
+            // Cooperative game the group didn't finish: nobody wins
+            players.forEach(p => { scores[p.id] = 0; });
             return scores;
         }
 

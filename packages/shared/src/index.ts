@@ -4,8 +4,7 @@ export interface Player {
     name: string;
     isHost: boolean;
     isAlive: boolean;
-    score: number; // Temporary game score (resets each game)
-    roomWins: number; // Persistent wins in this room session
+    roomWins: number; // Games won in this room (shown on the lobby scoreboard)
     roomId?: string;
     connected: boolean; // False while the player is inside the reconnect grace period
 }

@@ -13,7 +13,6 @@ const makePlayers = (...ids: string[]): Player[] => ids.map((id, i) => ({
     name: `Player ${id}`,
     isHost: i === 0,
     isAlive: true,
-    score: 0,
     roomWins: 0,
     roomId: 'ROOM',
     connected: true

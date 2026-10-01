@@ -3,6 +3,7 @@ import { Player } from '@ryunix/shared';
 
 interface LeaderboardProps {
     players: Player[];
+    // Per-game scores (e.g. Split/Steal trust). Without them the board shows wins in this room.
     scores?: { [playerId: string]: number };
     maxHeight?: string;
     myId?: string;
@@ -11,22 +12,20 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHeight = 'max-h-64', myId, isHost, onKick }) => {
-    // Sort players by score
-    const sortedPlayers = [...players].sort((a, b) => {
-        const scoreA = scores ? (scores[a.id] || 0) : a.score;
-        const scoreB = scores ? (scores[b.id] || 0) : b.score;
-        return scoreB - scoreA;
-    });
+    const valueOf = (p: Player) => scores ? (scores[p.id] || 0) : p.roomWins;
+    const sortedPlayers = [...players].sort((a, b) => valueOf(b) - valueOf(a));
+    const topValue = Math.max(0, ...players.map(valueOf));
 
     return (
         <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 w-full">
             <h3 className="text-gray-400 font-bold mb-3 uppercase text-xs tracking-wider border-b border-gray-700 pb-2 flex justify-between">
-                <span>Leaderboard</span>
-                <span>PTS</span>
+                <span>{scores ? 'Leaderboard' : 'Scoreboard'}</span>
+                <span>{scores ? 'PTS' : 'WINS'}</span>
             </h3>
             <div className={`flex flex-col gap-1 overflow-y-auto ${maxHeight} custom-scrollbar`}>
                 {sortedPlayers.map((p, index) => {
-                    const score = scores ? (scores[p.id] || 0) : p.score;
+                    const score = valueOf(p);
+                    const isLeader = !scores && score > 0 && score === topValue;
 
                     return (
                         <div key={p.id} className={`flex items-center justify-between p-2 rounded ${index === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : 'hover:bg-gray-700/50'
@@ -37,7 +36,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, scores, maxHe
                                         index === 2 ? 'text-amber-700' : 'text-gray-600'
                                     }`}>{index + 1}</span>
                                 <span className="font-medium text-gray-200 text-sm truncate max-w-[120px]" title={p.name}>
-                                    {p.name}
+                                    {isLeader && <span aria-label="Most wins">👑 </span>}{p.name}
                                 </span>
                                 {!p.connected && (
                                     <span className="text-[10px] uppercase font-bold text-yellow-500/80" title="Disconnected, waiting for them to rejoin">

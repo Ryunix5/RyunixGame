@@ -17,7 +17,7 @@ const makeRoom = (...ids: string[]): Room => ({
     status: RoomStatus.LOBBY,
     maxPlayers: 8,
     players: ids.map((id, i): Player => ({
-        id, name: id.toUpperCase(), isHost: i === 0, isAlive: true, score: 0, roomWins: 0, roomId: 'ROOM01', connected: true
+        id, name: id.toUpperCase(), isHost: i === 0, isAlive: true, roomWins: 0, roomId: 'ROOM01', connected: true
     }))
 });
 

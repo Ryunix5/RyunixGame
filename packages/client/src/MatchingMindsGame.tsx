@@ -161,31 +161,6 @@ export const MatchingMindsGame = ({ gameState }: { gameState: MatchingMindsState
                     </>
                 )}
 
-                <div className="w-full max-w-md">
-                    <h3 className="text-sm text-gray-500 uppercase tracking-widest mb-3">Final Scores</h3>
-                    <div className="flex flex-col gap-2">
-                        {room.players
-                            .sort((a, b) => b.score - a.score)
-                            .map((p, i) => (
-                                <div
-                                    key={p.id}
-                                    className={`flex justify-between items-center p-3 rounded-lg ${i === 0 ? 'bg-yellow-900/30 border border-yellow-500' :
-                                        i === 1 ? 'bg-gray-800/50 border border-gray-600' :
-                                            i === 2 ? 'bg-orange-900/30 border border-orange-700' :
-                                                'bg-gray-800/30 border border-gray-700'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">
-                                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : ''}
-                                        </span>
-                                        <span className="text-white font-bold">{p.name}</span>
-                                    </div>
-                                    <span className="text-cyan-400 font-mono font-bold">{p.score} pts</span>
-                                </div>
-                            ))}
-                    </div>
-                </div>
             </div>
         );
     }

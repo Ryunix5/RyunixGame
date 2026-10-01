@@ -162,6 +162,6 @@ export class RoomManager {
     }
 
     private createPlayer(id: string, name: string, roomId: string, isHost: boolean): Player {
-        return { id, name, isHost, isAlive: true, score: 0, roomWins: 0, roomId, connected: true };
+        return { id, name, isHost, isAlive: true, roomWins: 0, roomId, connected: true };
     }
 }

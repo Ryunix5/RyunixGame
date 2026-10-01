@@ -46,6 +46,9 @@ export const ResultsView: React.FC = () => {
                                 <div className="flex flex-col">
                                     <span className="font-bold text-lg">{p.name}</span>
                                     {isWinner && <span className="text-xs text-yellow-500 uppercase font-bold tracking-wider">Winner</span>}
+                                    <span className="text-xs text-gray-500 uppercase tracking-wider">
+                                        {p.roomWins} {p.roomWins === 1 ? 'win' : 'wins'} this session
+                                    </span>
                                 </div>
                             </div>
                             <span className={`text-2xl font-black ${score > 0 ? 'text-green-400' : score < 0 ? 'text-red-400' : 'text-gray-400'}`}>

@@ -3,6 +3,7 @@
     "name": "Minecraft",
     "description": "Blocks, mobs, biomes, and items from Minecraft",
     "difficulty": "medium",
+    "kind": "things",
     "topics": [
         "Diamond",
         "Iron Ore",

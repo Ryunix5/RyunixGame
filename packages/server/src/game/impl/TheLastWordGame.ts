@@ -1,4 +1,4 @@
-import { Player } from '@ryunix/shared';
+import { Player, getGameInfo } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState, HIDDEN, SYSTEM_SENDER } from '../GamePlugin';
 import { GAME_TIMING } from '../../constants';
 import { packageLoader } from '../../services/PackageLoader';
@@ -33,9 +33,7 @@ export class TheLastWordGame implements GamePlugin {
     private getRandomTopic(state: TheLastWordState): string {
         // Get package ID from state or use all topics as fallback
         const packageId = (state as any).packageId;
-        const topics = packageId
-            ? packageLoader.getTopicsFromPackage(packageId)
-            : packageLoader.getAllTopics();
+        const topics = packageLoader.getWords(getGameInfo(this.id)!.contentKind!, packageId);
 
         // Fallback to basic topics if no packages loaded
         if (topics.length === 0) {

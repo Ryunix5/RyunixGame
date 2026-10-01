@@ -3,6 +3,7 @@
     "name": "General Knowledge",
     "description": "Common everyday topics and general knowledge",
     "difficulty": "easy",
+    "kind": "categories",
     "topics": [
         "Animals",
         "Colors",

@@ -3,6 +3,7 @@
     "name": "Geography & Travel",
     "description": "Countries, cities, and landmarks around the world",
     "difficulty": "medium",
+    "kind": "things",
     "topics": [
         "France",
         "Germany",

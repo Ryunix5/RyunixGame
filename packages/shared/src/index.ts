@@ -102,6 +102,20 @@ export const INPUT_LIMITS = {
 } as const;
 
 // ==================== GAME CATALOG ====================
+
+// Content packs hold either categories to name things in ("Fruits") or specific things to describe
+// or guess ("Pizza"). Each word game needs one kind, and the other kind makes no sense for it.
+export type ContentKind = 'categories' | 'things';
+
+export interface ContentPackageSummary {
+    id: string;
+    name: string;
+    description: string;
+    difficulty: string;
+    kind: ContentKind;
+    topicCount: number;
+}
+
 // Single source of truth for what the lobby shows. Each server GamePlugin must use the same id and
 // player limits (a server test checks this).
 
@@ -111,24 +125,24 @@ export interface GameInfo {
     description: string;
     minPlayers: number;
     maxPlayers: number;
-    usesContentPacks: boolean; // Whether the host's content pack choice affects this game
+    contentKind: ContentKind | null; // Which content packs the game uses (null: none)
     howToPlay: string[]; // Short rule steps shown in the lobby and in-game
 }
 
 export const GAME_CATALOG: readonly GameInfo[] = [
-    { id: 'split-steal', name: 'Split or Steal', description: 'Pair up and secretly choose: share the points or take them all.', minPlayers: 2, maxPlayers: 8, usesContentPacks: false,
+    { id: 'split-steal', name: 'Split or Steal', description: 'Pair up and secretly choose: share the points or take them all.', minPlayers: 2, maxPlayers: 8, contentKind: null,
         howToPlay: ["Everyone starts with 3 trust points. Each round you are paired with someone (with an odd count, one player sits out).", "Talk it over, then secretly choose SPLIT or STEAL.", "Both split: +1 each. One steals: the stealer gets +2 and the other loses 2. Both steal: -1 each.", "After 4 rounds, the most trust points wins."] },
-    { id: 'unknown-to-one', name: 'Unknown to One', description: 'Everyone knows the secret word except one player. Find them.', minPlayers: 3, maxPlayers: 10, usesContentPacks: true,
+    { id: 'unknown-to-one', name: 'Unknown to One', description: 'Everyone knows the secret word except one player. Find them.', minPlayers: 3, maxPlayers: 10, contentKind: 'things',
         howToPlay: ["The host picks a secret word (or a random one). Everyone sees it except one player: the Blackened.", "Take turns saying one word that hints at the secret. The Blackened has to bluff.", "Then decide together: another round of hints, or vote now.", "Vote for who you think the Blackened is. If you catch them, they pay 1 point to every other player but get one guess at the word for +1. If they escape, they get +4.", "First to 10 points wins."] },
-    { id: 'the-last-word', name: 'The Last Word', description: 'Name something in the topic before time runs out. Last one standing wins.', minPlayers: 2, maxPlayers: 16, usesContentPacks: true,
+    { id: 'the-last-word', name: 'The Last Word', description: 'Name something in the topic before time runs out. Last one standing wins.', minPlayers: 2, maxPlayers: 16, contentKind: 'categories',
         howToPlay: ["The host sets a topic, like \"Fruits\". Everyone has 5 seconds to type something that fits.", "No answer in time and you lose a life. Everyone starts with 3.", "Think an answer doesn't fit? Challenge it and the host decides. A wrong challenge costs the challenger a life; a right one costs the answerer.", "Last player with lives left wins."] },
-    { id: 'prisoners-letter', name: "The Prisoners' Letter", description: 'Write an anonymous note, then guess who wrote the one read out.', minPlayers: 3, maxPlayers: 10, usesContentPacks: false,
+    { id: 'prisoners-letter', name: "The Prisoners' Letter", description: 'Write an anonymous note, then guess who wrote the one read out.', minPlayers: 3, maxPlayers: 10, contentKind: null,
         howToPlay: ["Everyone secretly writes a short note (10 words max).", "One note is read out anonymously. Everyone else votes on who wrote it.", "Each correct guess is +1. If nobody picks the author, the author gets +3, so write like someone else!", "First to 10 points wins."] },
-    { id: 'deceiving-cards', name: 'Deceiving Cards', description: "You see everyone's card but your own. Guess yours to survive.", minPlayers: 3, maxPlayers: 10, usesContentPacks: false,
+    { id: 'deceiving-cards', name: 'Deceiving Cards', description: "You see everyone's card but your own. Guess yours to survive.", minPlayers: 3, maxPlayers: 10, contentKind: null,
         howToPlay: ["Everyone gets a card suit (♠ ♥ ♦ ♣). You can see everyone's card except your own.", "Each round, everyone guesses their own suit. Guess wrong and you are out; guess right and you get a new card.", "Your only clues are what the others tell you out loud, and they might be lying.", "The last two players standing win."] },
-    { id: 'mind-reader', name: 'Mind Reader', description: "Guess your partner's secret word.", minPlayers: 2, maxPlayers: 10, usesContentPacks: true,
+    { id: 'mind-reader', name: 'Mind Reader', description: "Guess your partner's secret word.", minPlayers: 2, maxPlayers: 10, contentKind: 'things',
         howToPlay: ["You're paired up and each get a secret word. You can see yours but not your partner's.", "Ask each other questions and drop hints out loud, without saying your word.", "The first player to type their partner's word wins."] },
-    { id: 'matching-minds', name: 'Matching Minds', description: 'Everyone says a word each round until you all say the same one.', minPlayers: 2, maxPlayers: 8, usesContentPacks: false,
+    { id: 'matching-minds', name: 'Matching Minds', description: 'Everyone says a word each round until you all say the same one.', minPlayers: 2, maxPlayers: 8, contentKind: null,
         howToPlay: ["Everyone types a word at the same time, then all the words are revealed.", "Next round, everyone tries to say the same word, using the last round's words as the link.", "You win together when everyone says the same word. You have 15 rounds."] },
 ];
 

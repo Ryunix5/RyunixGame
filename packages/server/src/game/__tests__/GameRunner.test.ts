@@ -10,6 +10,7 @@ import { PrisonersLetterGame } from '../impl/PrisonersLetterGame';
 import { MatchingMindsGame } from '../impl/MatchingMindsGame';
 import { BlindShapesGame } from '../impl/BlindShapesGame';
 import { MindReaderGame } from '../impl/MindReaderGame';
+import { packageLoader } from '../../services/PackageLoader';
 
 const makeRoom = (...ids: string[]): Room => ({
     id: 'ROOM01',
@@ -219,6 +220,18 @@ describe('GameRunner', () => {
                 runner.start(room, 'unknown-to-one', {});
                 runner.handleAction(room, 'a', { type: 'set_word', word: 'Pizza' });
                 expect(room.gameState.blackenedId).not.toBe('a');
+                runner.stop(room.id);
+            }
+        });
+
+        it('Unknown to One draws secret words from "things" packs even if a categories pack is sent', () => {
+            const categories = packageLoader.loadPackages().filter(p => p.kind === 'categories').flatMap(p => p.topics || []);
+            for (let i = 0; i < 20; i++) {
+                const room = makeRoom('a', 'b', 'c');
+                runner.start(room, 'unknown-to-one', { packageId: 'general' });
+                runner.handleAction(room, 'a', { type: 'random_word' });
+                expect(room.gameState.secretWord).toBeTruthy();
+                expect(categories).not.toContain(room.gameState.secretWord);
                 runner.stop(room.id);
             }
         });

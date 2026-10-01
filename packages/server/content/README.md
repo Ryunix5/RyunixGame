@@ -29,7 +29,8 @@ Create a new JSON file in `packages/`:
   "name": "Your Package Name",
   "description": "What this package contains",
   "difficulty": "easy",
-  "topics": ["Topic 1", "Topic 2", "Topic 3"]
+  "kind": "things",
+  "topics": ["Item 1", "Item 2", "Item 3"]
 }
 ```
 
@@ -40,6 +41,10 @@ Each package should have:
 - `name`: Display name
 - `description`: What it contains
 - `difficulty`: "easy", "medium", or "hard"
-- `topics`: Array of content items
+- `kind`: what the items are (required):
+  - `"categories"`: groups to name things in, like "Fruits" or "Marvel Movies". Used by The Last Word.
+  - `"things"`: specific things to describe or guess, like "Pizza" or "Volcano". Used by Unknown to One and Mind Reader.
+- `topics`: Array of content items, all of that kind
 
-All games can use any package!
+A game only offers packs of the kind it needs (`contentKind` in the shared `GAME_CATALOG`), and the server
+never hands a game the other kind, even if a client asks for it. `everyday` and `general` are the defaults.

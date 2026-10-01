@@ -3,6 +3,7 @@
     "name": "Pop Culture",
     "description": "Movies, TV shows, music, celebrities, and entertainment",
     "difficulty": "medium",
+    "kind": "categories",
     "topics": [
         "Marvel Movies",
         "DC Movies",

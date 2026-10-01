@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { ContentKind } from '@ryunix/shared';
 
 export interface ContentPackage {
     id: string;
     name: string;
     description?: string;
     difficulty?: 'easy' | 'medium' | 'hard';
+    kind: ContentKind;
     topics?: string[];
     prompts?: string[];
     wordPairs?: Array<{ common: string; unique: string }>;
@@ -73,20 +75,13 @@ class PackageLoader {
     }
 
     /**
-     * Gets all topics from all packages (combined)
+     * Words of one kind for a game. Uses the chosen package if it is that kind; otherwise (none
+     * chosen, unknown, or the wrong kind) falls back to every package of that kind.
      */
-    getAllTopics(): string[] {
-        const packages = this.loadPackages();
-        const allTopics = packages.flatMap(p => p.topics || []);
-        return allTopics;
-    }
-
-    /**
-     * Gets topics from a specific package
-     */
-    getTopicsFromPackage(packageId: string): string[] {
-        const pkg = this.getPackage(packageId);
-        return pkg?.topics || [];
+    getWords(kind: ContentKind, packageId?: string): string[] {
+        const chosen = packageId ? this.getPackage(packageId) : undefined;
+        if (chosen?.kind === kind && chosen.topics?.length) return chosen.topics;
+        return this.loadPackages().filter(p => p.kind === kind).flatMap(p => p.topics || []);
     }
 
     /**

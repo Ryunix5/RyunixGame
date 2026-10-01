@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { SocketEvents, RoomStatus, Room, SessionInfo } from '@ryunix/shared';
+import { SocketEvents, RoomStatus, Room, SessionInfo, ContentPackageSummary } from '@ryunix/shared';
 import { SERVER_CONFIG, ROOM_CONFIG, SOCKET_RATE_LIMITS, SocketRateCategory, MAX_SOCKET_PAYLOAD_BYTES } from './constants';
 import { RateLimiter } from './utils/rateLimit';
 import { logger } from './utils/logger';
@@ -254,11 +254,12 @@ io.on('connection', (socket) => {
         if (typeof callback !== 'function' || !withinRateLimit('getAvailablePackages')) return;
         try {
             const packages = packageLoader.loadPackages();
-            const summary = packages.map(p => ({
+            const summary: ContentPackageSummary[] = packages.map(p => ({
                 id: p.id,
                 name: p.name,
                 description: p.description || '',
                 difficulty: p.difficulty || 'medium',
+                kind: p.kind,
                 topicCount: p.topics?.length || 0
             }));
             callback(summary);

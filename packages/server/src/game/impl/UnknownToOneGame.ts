@@ -1,4 +1,4 @@
-import { Player } from '@ryunix/shared';
+import { Player, getGameInfo } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 import { cleanText } from '../gameUtils';
@@ -33,9 +33,7 @@ export class UnknownToOneGame implements GamePlugin {
 
         // Load from specific package if provided
         const packageId = config?.packageId;
-        const words = packageId
-            ? packageLoader.getTopicsFromPackage(packageId)
-            : packageLoader.getAllTopics();
+        const words = packageLoader.getWords(getGameInfo(this.id)!.contentKind!, packageId);
 
         return {
             type: 'unknown-to-one',

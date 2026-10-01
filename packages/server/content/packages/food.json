@@ -3,6 +3,7 @@
     "name": "Food & Drinks",
     "description": "Foods, drinks, cuisines, and ingredients",
     "difficulty": "easy",
+    "kind": "things",
     "topics": [
         "Pizza",
         "Burger",

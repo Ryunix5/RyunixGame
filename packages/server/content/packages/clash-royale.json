@@ -3,6 +3,7 @@
     "name": "Clash Royale",
     "description": "Cards from Clash Royale",
     "difficulty": "medium",
+    "kind": "things",
     "topics": [
         "Knight",
         "Archers",

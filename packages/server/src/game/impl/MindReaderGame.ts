@@ -1,4 +1,4 @@
-import { Player } from '@ryunix/shared';
+import { Player, getGameInfo } from '@ryunix/shared';
 import { GameContext, GamePlugin, GameState, PlayerViewContext } from '../GamePlugin';
 import { packageLoader } from '../../services/PackageLoader';
 import { cleanText } from '../gameUtils';
@@ -32,9 +32,7 @@ export class MindReaderGame implements GamePlugin {
 
         // Load from specific package if provided
         const packageId = config?.packageId;
-        const words = packageId
-            ? packageLoader.getTopicsFromPackage(packageId)
-            : packageLoader.getAllTopics();
+        const words = packageLoader.getWords(getGameInfo(this.id)!.contentKind!, packageId);
 
         const finalWords = words.length > 0 ? words : DEFAULT_WORDS;
 

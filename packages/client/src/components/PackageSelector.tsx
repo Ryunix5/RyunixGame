@@ -1,20 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
+import { ContentKind, ContentPackageSummary } from '@ryunix/shared';
 import { useSocket } from '../SocketContext';
 
-interface Package {
-    id: string;
-    name: string;
-    description: string;
-    topicCount: number;
-    difficulty: string;
-}
+type Package = ContentPackageSummary;
+
+// Broad packs anyone can play; shown first and picked by default over niche ones
+const DEFAULT_PACK_IDS = ['everyday', 'general'];
+const defaultsFirst = (a: Package, b: Package) =>
+    Number(DEFAULT_PACK_IDS.includes(b.id)) - Number(DEFAULT_PACK_IDS.includes(a.id));
 
 interface PackageSelectorProps {
+    kind: ContentKind; // Only packs of this kind fit the selected game
     selectedPackageId: string;
     onSelectionChange: (packageId: string) => void;
 }
 
-export function PackageSelector({ selectedPackageId, onSelectionChange }: PackageSelectorProps) {
+export function PackageSelector({ kind, selectedPackageId, onSelectionChange }: PackageSelectorProps) {
     const [packages, setPackages] = useState<Package[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const { socket } = useSocket();
@@ -27,13 +28,22 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
         });
     }, [socket]);
 
+    const packagesOfKind = useMemo(() => packages.filter(pkg => pkg.kind === kind).sort(defaultsFirst), [packages, kind]);
+
+    // Switching to a game that needs the other kind: move the selection to a pack that fits
+    useEffect(() => {
+        if (packagesOfKind.length > 0 && !packagesOfKind.some(p => p.id === selectedPackageId)) {
+            onSelectionChange(packagesOfKind[0].id);
+        }
+    }, [packagesOfKind, selectedPackageId, onSelectionChange]);
+
     const filteredPackages = useMemo(() => {
         const lowerSearch = searchQuery.toLowerCase();
-        return packages.filter(pkg => 
-            pkg.name.toLowerCase().includes(lowerSearch) || 
+        return packagesOfKind.filter(pkg =>
+            pkg.name.toLowerCase().includes(lowerSearch) ||
             pkg.description.toLowerCase().includes(lowerSearch)
         );
-    }, [packages, searchQuery]);
+    }, [packagesOfKind, searchQuery]);
 
     const selectedPackage = packages.find(p => p.id === selectedPackageId);
 
@@ -42,7 +52,7 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
             <h3 className="text-xl font-bold text-[#ff007f] mb-2 uppercase tracking-widest border-b-2 border-slate-800 pb-2">
                 &gt; CONTENT_PACKAGES
             </h3>
-            
+
             <input
                 type="text"
                 placeholder="SEARCH_INDEX..."
@@ -62,8 +72,8 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
                                 key={pkg.id}
                                 className={`
                                     flex items-center p-3 cursor-pointer border-2 transition-all duration-75 relative
-                                    ${isSelected 
-                                        ? 'border-[#00e5ff] bg-slate-900' 
+                                    ${isSelected
+                                        ? 'border-[#00e5ff] bg-slate-900'
                                         : 'border-slate-800 hover:bg-black hover:border-slate-600'}
                                 `}
                             >
@@ -82,7 +92,7 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
                                         {pkg.name}
                                     </div>
                                     <div className="text-sm font-sans font-bold text-slate-500">
-                                        {pkg.description} • {pkg.topicCount} TOPICS
+                                        {pkg.description} • {pkg.topicCount} {kind === 'categories' ? 'TOPICS' : 'WORDS'}
                                     </div>
                                 </div>
                             </label>
@@ -90,7 +100,7 @@ export function PackageSelector({ selectedPackageId, onSelectionChange }: Packag
                     })
                 )}
             </div>
-            
+
             {/* Display Selected Status */}
             <div className="mt-4 p-2 border-t-2 border-slate-800 flex justify-between items-center text-xs text-slate-500">
                 <span>ACTIVE_ARCHIVE:</span>

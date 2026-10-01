@@ -46,7 +46,7 @@ export const RoomView: React.FC = () => {
     const { room, socket, leaveRoom: socketLeaveRoom, playerId } = useSocket();
     const { playSound } = useAudio();
     const { leaveVoice, joined } = useVoice();
-    const [selectedPackageId, setSelectedPackageId] = React.useState<string>('general');
+    const [selectedPackageId, setSelectedPackageId] = React.useState<string>('everyday');
     const { showToast } = useToast();
     const [showRules, setShowRules] = React.useState(false);
 
@@ -92,7 +92,7 @@ export const RoomView: React.FC = () => {
 
     const startGame = () => {
         if (!socket || !isHost || startBlockedReason) return;
-        const packageId = selectedInfo?.usesContentPacks ? selectedPackageId : undefined;
+        const packageId = selectedInfo?.contentKind ? selectedPackageId : undefined;
         socket.emit(SocketEvents.START_GAME, { roomId: room.id, gameId: selectedGame, packageId });
     };
 
@@ -195,9 +195,10 @@ export const RoomView: React.FC = () => {
                     {selectedInfo && <HowToPlay game={selectedInfo} />}
 
                     {/* Package Selection */}
-                    {isHost && selectedInfo?.usesContentPacks && (
+                    {isHost && selectedInfo?.contentKind && (
                         <div className="w-full mt-8 p-4 border-4 border-slate-800 bg-black">
                             <PackageSelector
+                                kind={selectedInfo.contentKind}
                                 selectedPackageId={selectedPackageId}
                                 onSelectionChange={setSelectedPackageId}
                             />

@@ -15,6 +15,7 @@ import { Button } from './components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoice } from './VoiceContext';
 import { PackageSelector } from './components/PackageSelector';
+import { HowToPlay } from './components/HowToPlay';
 import { useToast } from './components/Toast';
 import { inviteLinkFor } from './invite';
 
@@ -47,6 +48,7 @@ export const RoomView: React.FC = () => {
     const { leaveVoice, joined } = useVoice();
     const [selectedPackageId, setSelectedPackageId] = React.useState<string>('general');
     const { showToast } = useToast();
+    const [showRules, setShowRules] = React.useState(false);
 
     // Play victory sound when game finishes
     const prevStatusRef = React.useRef<RoomStatus>();
@@ -190,6 +192,8 @@ export const RoomView: React.FC = () => {
                         ))}
                     </div>
 
+                    {selectedInfo && <HowToPlay game={selectedInfo} />}
+
                     {/* Package Selection */}
                     {isHost && selectedInfo?.usesContentPacks && (
                         <div className="w-full mt-8 p-4 border-4 border-slate-800 bg-black">
@@ -250,10 +254,21 @@ export const RoomView: React.FC = () => {
                         <span className="w-4 h-4 bg-[#00e5ff] animate-ping" />
                         <span className="text-sm md:text-xl font-pixel text-[#00e5ff] uppercase tracking-widest">&gt; COMBAT_ENGAGED</span>
                     </div>
-                    <Button onClick={leaveRoom} className="pixel-btn bg-red-900 border-red-500 text-xl px-6">
-                        FLEE_BATTLE
-                    </Button>
+                    <div className="flex gap-2">
+                        {getGameInfo(room.gameState?.type || '') && (
+                            <Button onClick={() => setShowRules(v => !v)} className="pixel-btn text-xl px-4" aria-expanded={showRules}>
+                                {showRules ? 'HIDE_RULES' : 'RULES'}
+                            </Button>
+                        )}
+                        <Button onClick={leaveRoom} className="pixel-btn bg-red-900 border-red-500 text-xl px-6">
+                            FLEE_BATTLE
+                        </Button>
+                    </div>
                 </div>
+
+                {showRules && getGameInfo(room.gameState?.type || '') && (
+                    <HowToPlay game={getGameInfo(room.gameState!.type)!} className="mb-6" />
+                )}
 
                 {room.gameState?.type === 'split-steal' && <SplitStealGameComponent gameState={room.gameState} />}
                 {room.gameState?.type === 'the-last-word' && <TheLastWordGame gameState={room.gameState as any} />}

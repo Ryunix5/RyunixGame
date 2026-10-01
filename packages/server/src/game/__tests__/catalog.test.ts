@@ -20,4 +20,9 @@ describe('GAME_CATALOG', () => {
         const info = GAME_CATALOG.find(g => g.id === id)!;
         expect({ min: info.minPlayers, max: info.maxPlayers }).toEqual({ min: plugin.minPlayers, max: plugin.maxPlayers });
     });
+
+    it.each(GAME_CATALOG.map(g => [g.id, g] as const))('%s explains how to play', (_id, info) => {
+        expect(info.howToPlay.length).toBeGreaterThan(0);
+        info.howToPlay.forEach(step => expect(step.trim()).not.toBe(''));
+    });
 });

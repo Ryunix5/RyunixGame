@@ -1,7 +1,6 @@
 import React from 'react';
 import { AnimatePresence, MotionConfig } from 'framer-motion';
 import { SocketProvider, useSocket } from './SocketContext';
-import { VoiceProvider } from './VoiceContext';
 import { AudioProvider } from './AudioContext';
 import { Home } from './Home';
 import { RoomView } from './RoomView';
@@ -49,11 +48,9 @@ function App() {
             <MotionConfig reducedMotion="user">
             <ToastProvider>
                 <SocketProvider>
-                    <VoiceProvider>
-                        <AudioProvider>
-                            <AppContent />
-                        </AudioProvider>
-                    </VoiceProvider>
+                    <AudioProvider>
+                        <AppContent />
+                    </AudioProvider>
                 </SocketProvider>
             </ToastProvider>
             </MotionConfig>

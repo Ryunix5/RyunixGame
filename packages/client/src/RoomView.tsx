@@ -13,39 +13,14 @@ import { ResultsView } from './ResultsView';
 import { Leaderboard } from './Leaderboard';
 import { Button } from './components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVoice } from './VoiceContext';
 import { PackageSelector } from './components/PackageSelector';
 import { HowToPlay } from './components/HowToPlay';
 import { useToast } from './components/Toast';
 import { inviteLinkFor } from './invite';
 
-const VoiceControls: React.FC = () => {
-    const { joined, joinVoice, leaveVoice, isMuted, toggleMute } = useVoice();
-
-    if (!joined) {
-        return (
-            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl" onClick={joinVoice}>
-                &gt; JOIN VOICE_CHAT
-            </Button>
-        );
-    }
-
-    return (
-        <div className="flex flex-wrap gap-2 md:gap-4">
-            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl" onClick={toggleMute}>
-                {isMuted ? 'UNMUTE_MIC' : 'MUTE_MIC'}
-            </Button>
-            <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl bg-red-900 border-red-500" onClick={leaveVoice}>
-                DISCONNECT_VOICE
-            </Button>
-        </div>
-    );
-};
-
 export const RoomView: React.FC = () => {
     const { room, socket, leaveRoom: socketLeaveRoom, playerId } = useSocket();
     const { playSound } = useAudio();
-    const { leaveVoice, joined } = useVoice();
     const [selectedPackageId, setSelectedPackageId] = React.useState<string>('everyday');
     const { showToast } = useToast();
     const [showRules, setShowRules] = React.useState(false);
@@ -61,10 +36,7 @@ export const RoomView: React.FC = () => {
         }
     }, [room?.status, playSound]);
 
-    const leaveRoom = () => {
-        if (joined) leaveVoice();
-        socketLeaveRoom();
-    };
+    const leaveRoom = () => socketLeaveRoom();
 
     // Default to 'split-steal' if nothing selected yet, but prefer room state
     const selectedGame = room?.selectedGameId || 'split-steal';
@@ -141,7 +113,6 @@ export const RoomView: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 md:gap-4">
-                    <VoiceControls />
                     <Button size="lg" className="pixel-btn px-4 md:px-6 text-lg md:text-xl bg-red-900 border-red-500" onClick={leaveRoom}>
                         EXIT_LOBBY
                     </Button>

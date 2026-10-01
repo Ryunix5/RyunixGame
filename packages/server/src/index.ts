@@ -37,7 +37,6 @@ const EVENT_RATE_CATEGORY: Record<string, SocketRateCategory> = {
     getAvailablePackages: 'lobby',
     [SocketEvents.GAME_ACTION]: 'game',
     [SocketEvents.SEND_CHAT]: 'chat',
-    voice_signal: 'voice',
 };
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : SERVER_CONFIG.PORT;
@@ -353,16 +352,6 @@ io.on('connection', (socket) => {
                 socket.emit(SocketEvents.ERROR, { message: error.message });
             }
         }
-    });
-
-    on('voice_signal', (data: { to: string, signal: any }) => {
-        // Only relay signalling between players in the same room
-        const room = roomManager.findRoomByPlayer(playerId);
-        if (!room || !room.players.some(p => p.id === data.to)) return;
-        io.to(data.to).emit('voice_signal', {
-            from: playerId,
-            signal: data.signal
-        });
     });
 
     socket.on('disconnect', () => {

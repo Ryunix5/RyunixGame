@@ -49,7 +49,6 @@ export const SOCKET_RATE_LIMITS = {
     game: { capacity: 20, refillPerSecond: 10 },
     lobby: { capacity: 10, refillPerSecond: 2 },
     roomList: { capacity: 5, refillPerSecond: 1 }, // Separate so list polling can never starve joins
-    voice: { capacity: 100, refillPerSecond: 50 }, // WebRTC signalling sends bursts of ICE candidates
 } as const;
 
 export type SocketRateCategory = keyof typeof SOCKET_RATE_LIMITS;
